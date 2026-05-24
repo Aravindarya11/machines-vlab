@@ -156,18 +156,39 @@ function handleZpfCSVUpload(e) {
 
 function initGraph() {
     zpfLayout = {
-        title: { text: 'ZPF (Potier Triangle) Method', font: { color: 'var(--text-main)' } },
+        title: { 
+            text: 'ZPF (Potier Triangle) Method', 
+            font: { family: 'Orbitron, sans-serif', color: 'var(--text-main)', size: 14 } 
+        },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        xaxis: { title: 'Field Current (If) A', color: 'var(--text-muted)', gridcolor: 'var(--border)' },
-        yaxis: { title: 'Voltage (V)', color: 'var(--text-muted)', gridcolor: 'var(--border)' },
-        legend: { font: { color: 'var(--text-main)' } },
+        xaxis: { 
+            title: { text: 'Field Current (If) A', font: { family: 'Inter, sans-serif', size: 11 } }, 
+            color: 'var(--text-muted)', 
+            gridcolor: 'rgba(59, 130, 246, 0.08)',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
+        },
+        yaxis: { 
+            title: { text: 'Voltage (V)', font: { family: 'Inter, sans-serif', size: 11 } }, 
+            color: 'var(--text-muted)', 
+            gridcolor: 'rgba(59, 130, 246, 0.08)',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
+        },
+        legend: { 
+            font: { family: 'Inter, sans-serif', color: 'var(--text-main)', size: 10 },
+            bgcolor: 'rgba(15, 23, 42, 0.6)'
+        },
+        hoverlabel: {
+            bgcolor: 'rgba(8, 12, 24, 0.95)',
+            bordercolor: 'rgba(0, 240, 255, 0.6)',
+            font: { family: 'Orbitron, monospace', color: '#00f0ff', size: 11 }
+        },
         margin: { l: 60, r: 60, t: 50, b: 50 },
         shapes: [],
         annotations: []
     };
 
-    Plotly.newPlot('zpfGraph', [], zpfLayout, {responsive: true});
+    Plotly.newPlot('zpfGraph', [], zpfLayout, {responsive: true, displayModeBar: false});
 }
 
 function parseInput() {
@@ -666,9 +687,27 @@ async function startAnimation() {
             <strong>Resultant Ifr:</strong> ${Ifr.toFixed(3)} A<br>
             <strong>E0 (Line):</strong> ${E0_line.toFixed(2)} V<br>
             <strong>E0 (Phase):</strong> ${E0_phase.toFixed(2)} V<br>
-            <strong style="color: var(--primary); font-size: 1.2rem;">Voltage Regulation: ${reg.toFixed(2)} %</strong>
         `;
         
+        // Calculate equivalent Xs for closing the voltage phasor diagram:
+        let Xs = 0;
+        const radicand = Math.pow(E0_phase, 2) - Math.pow(V * data.pf + I * data.ra, 2);
+        if (radicand >= 0) {
+            Xs = (-pfSign * V * Math.sin(phi) + Math.sqrt(radicand)) / I;
+        } else {
+            // Fallback: estimate from Potier leakage reactance Xl
+            Xs = Xl || 0;
+            console.warn("ZPF Synchronous Reactance Xs calculation hit negative radicand. Falling back to Xl:", Xs);
+        }
+        if (isNaN(Xs)) {
+            Xs = Xl || 0;
+        }
+
+        // Draw the regulation gauge and phasor diagram
+        drawRegulationGauge(reg);
+        document.getElementById('phasorCard').style.display = 'block';
+        drawPhasorDiagram(V, I, data.ra, Xs, data.pf, data.pfType);
+
         showToast('Animation Complete!', 'success');
         updateStatusLED('ready');
         document.getElementById('btnStart').disabled = false;
@@ -680,6 +719,7 @@ function resetGraph() {
     isPaused = false;
     document.getElementById('btnStart').disabled = false;
     document.getElementById('resultsCard').style.display = 'none';
+    document.getElementById('phasorCard').style.display = 'none';
     document.getElementById('explanationText').innerHTML = "Welcome to the ZPF (Potier Triangle) Method simulation. Enter data and start the animation.";
     updateStatusLED('ready');
     initGraph();
@@ -709,4 +749,175 @@ function generateReport() {
     csv += `Voltage Regulation,${calcResults.reg.toFixed(2)} %\n`;
     
     downloadCSV('ZPF_Potier_Lab_Report.csv', csv);
+}
+
+// ─── SVG Regulation Gauge ──────────────────────────────────────────
+function drawRegulationGauge(regPercent) {
+    const svg = document.getElementById('regGauge');
+    if (!svg) return;
+    const maxReg = 100;
+    const clampedReg = Math.min(Math.max(regPercent, 0), maxReg);
+    const fraction = clampedReg / maxReg;
+
+    const cx = 100, cy = 100, r = 75;
+    const startAngle = Math.PI;
+    const endAngle = 0;
+
+    function arcPath(fromFrac, toFrac, color) {
+        const ang1 = Math.PI - fromFrac * Math.PI;
+        const ang2 = Math.PI - toFrac * Math.PI;
+        const x1 = cx + r * Math.cos(ang1), y1 = cy - r * Math.sin(ang1);
+        const x2 = cx + r * Math.cos(ang2), y2 = cy - r * Math.sin(ang2);
+        const largeArc = (toFrac - fromFrac) > 0.5 ? 1 : 0;
+        return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round"/>`;
+    }
+
+    const bgX1 = cx + r * Math.cos(Math.PI), bgY1 = cy - r * Math.sin(Math.PI);
+    const bgX2 = cx + r * Math.cos(0), bgY2 = cy - r * Math.sin(0);
+    const bgArc = `<path d="M ${bgX1} ${bgY1} A ${r} ${r} 0 0 1 ${bgX2} ${bgY2}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14"/>`;
+
+    const greenArc = arcPath(0, 0.20, '#10b981');
+    const amberArc = arcPath(0.20, 0.40, '#f59e0b');
+    const redArc   = arcPath(0.40, 1.0, '#ef4444');
+
+    const needleX = cx + (r - 10) * Math.cos(Math.PI - fraction * Math.PI);
+    const needleY = cy - (r - 10) * Math.sin(Math.PI - fraction * Math.PI);
+    const needle = `<line x1="${cx}" y1="${cy}" x2="${needleX}" y2="${needleY}" stroke="${regPercent > 40 ? '#ef4444' : regPercent > 20 ? '#f59e0b' : '#10b981'}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="var(--text-muted)"/>`;
+
+    const ticks = ['0', '20', '40', '60', '80', '100'].map((val, i) => {
+        const frac = i / 5;
+        const angle = Math.PI - frac * Math.PI;
+        const tx = cx + (r + 14) * Math.cos(angle);
+        const ty = cy - (r + 14) * Math.sin(angle);
+        return `<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="middle" font-size="8" fill="rgba(255,255,255,0.4)" font-family="monospace">${val}%</text>`;
+    }).join('');
+
+    svg.innerHTML = bgArc + greenArc + amberArc + redArc + needle + ticks;
+
+    const color = regPercent > 40 ? '#ef4444' : regPercent > 20 ? '#f59e0b' : '#10b981';
+    document.getElementById('gaugeLabel').innerHTML =
+        `<span style="color:${color}; font-size:1.5rem;">${regPercent.toFixed(2)}%</span><br>
+         <span style="color:var(--text-muted); font-size:0.75rem;">Voltage Regulation</span>`;
+}
+
+// ─── ZPF Voltage Phasor Canvas Drawing ──────────────────────────────
+function drawPhasorDiagram(V, I, Ra, Xs, pf, pfType) {
+    const canvas = document.getElementById('phasorCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const phi = Math.acos(pf);
+    const sign = pfType === 'leading' ? -1 : 1;
+
+    const V_ph = V;
+    const IRa = I * Ra;
+    const IXs = I * Xs;
+    const E0 = Math.sqrt(Math.pow(V_ph * pf + IRa, 2) + Math.pow(V_ph * Math.sin(phi) + sign * IXs, 2));
+
+    const maxLen = E0 * 1.15;
+    const scale = (Math.min(W, H) * 0.38) / maxLen;
+
+    const cx = W * 0.2, cy = H * 0.55;
+
+    const V_angle = sign >= 1 ? phi : -phi;
+
+    const Vx = V_ph * Math.cos(V_angle) * scale;
+    const Vy = -V_ph * Math.sin(V_angle) * scale;
+
+    const IRax = IRa * scale;
+    const Vend_x = cx + Vx;
+    const Vend_y = cy + Vy;
+
+    const pIRa_x = Vend_x + IRax;
+    const pIRa_y = Vend_y;
+    const pIXs_x = pIRa_x;
+    const pIXs_y = pIRa_y - sign * IXs * scale;
+
+    const E0_tip_x = pIXs_x;
+    const E0_tip_y = pIXs_y;
+
+    // Draw grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // Draw current reference arrow (horizontal dashed)
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 120, cy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '11px monospace';
+    ctx.fillText('I (ref)', cx + 125, cy + 4);
+
+    function drawArrow(x0, y0, x1, y1, color, label, labelPos) {
+        const angle = Math.atan2(y1 - y0, x1 - x0);
+        const len = Math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2);
+        if (len < 2) return;
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Arrowhead
+        const aLen = 10;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 - aLen * Math.cos(angle - 0.35), y1 - aLen * Math.sin(angle - 0.35));
+        ctx.lineTo(x1 - aLen * Math.cos(angle + 0.35), y1 - aLen * Math.sin(angle + 0.35));
+        ctx.closePath();
+        ctx.fill();
+
+        // Label
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = color;
+        const lx = labelPos ? labelPos.x : (x0 + x1) / 2 + 8;
+        const ly = labelPos ? labelPos.y : (y0 + y1) / 2 - 6;
+        ctx.fillText(label, lx, ly);
+    }
+
+    // Draw V phasor
+    drawArrow(cx, cy, Vend_x, Vend_y, '#3b82f6', `V = ${V_ph.toFixed(1)}V`);
+    // Draw IRa phasor
+    drawArrow(Vend_x, Vend_y, pIRa_x, pIRa_y, '#10b981', `IRa = ${IRa.toFixed(1)}V`);
+    // Draw IXs phasor
+    drawArrow(pIRa_x, pIRa_y, pIXs_x, pIXs_y, '#ef4444', `IXs = ${(IXs).toFixed(1)}V`);
+    // Draw E0 resultant
+    ctx.setLineDash([8, 4]);
+    drawArrow(cx, cy, E0_tip_x, E0_tip_y, '#a855f7', `E0 = ${E0.toFixed(1)}V`,
+        { x: (cx + E0_tip_x) / 2 - 50, y: (cy + E0_tip_y) / 2 - 8 });
+    ctx.setLineDash([]);
+
+    // Right angle marker
+    const sq = 8;
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pIRa_x - sq, pIRa_y);
+    ctx.lineTo(pIRa_x - sq, pIRa_y - sign * sq);
+    ctx.lineTo(pIRa_x, pIRa_y - sign * sq);
+    ctx.stroke();
+
+    // Legend
+    const legend = document.getElementById('phasorLegend');
+    legend.innerHTML = `
+        <span style="color:#3b82f6"><i class="fa-solid fa-minus"></i> V (Terminal Voltage)</span>
+        <span style="color:#10b981"><i class="fa-solid fa-minus"></i> I·Ra Drop</span>
+        <span style="color:#ef4444"><i class="fa-solid fa-minus"></i> I·Xs Drop (Equivalent)</span>
+        <span style="color:#a855f7"><i class="fa-solid fa-minus" style="text-decoration:underline dotted"></i> E0 (Generated EMF)</span>
+        <span style="color:rgba(255,255,255,0.35)">--- I (Current Reference)</span>
+    `;
 }

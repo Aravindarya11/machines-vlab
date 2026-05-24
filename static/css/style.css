@@ -861,28 +861,60 @@ th {
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
 }
 
-.rotor-flux-lines {
-    position: absolute;
-    width: 220px;
-    height: 220px;
-    border: 2px dashed rgba(239, 68, 68, 0.25);
-    border-radius: 50%;
-    z-index: 1;
-    pointer-events: none;
-    animation: ringSpin 12s linear infinite;
-}
-
-.rotor-flux-lines::before {
-    content: '';
+.rotor-flux-svg {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 180px;
-    height: 180px;
-    border: 2px dashed rgba(59, 130, 246, 0.25);
-    border-radius: 50%;
-    animation: ringSpin 8s linear infinite reverse;
+    width: 280px;
+    height: 280px;
+    z-index: 1;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.flux-path {
+    fill: none;
+    stroke: rgba(0, 240, 255, 0.85);
+    stroke-width: 2.5px;
+    stroke-linecap: round;
+    stroke-dasharray: 6 12;
+    animation: fluxFlow 3s linear infinite;
+    filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.6));
+    transition: var(--transition);
+}
+
+.flux-loop-inner {
+    stroke: rgba(139, 92, 246, 0.85);
+    filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.6));
+    animation-duration: 2s;
+}
+
+.flux-loop-middle {
+    stroke: rgba(0, 240, 255, 0.8);
+    animation-duration: 3s;
+}
+
+.flux-loop-outer {
+    stroke: rgba(16, 185, 129, 0.7);
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
+    animation-duration: 4.5s;
+}
+
+.flux-center-line {
+    stroke-dasharray: 4 8;
+    animation: fluxFlowCenter 1.5s linear infinite;
+}
+
+@keyframes fluxFlow {
+    to {
+        stroke-dashoffset: -36;
+    }
+}
+
+@keyframes fluxFlowCenter {
+    to {
+        stroke-dashoffset: -24;
+    }
 }
 
 .machine-visualizer-controls {
@@ -1989,5 +2021,70 @@ th {
 .industrial-viewport.layout-maximized svg {
     width: 100% !important;
     height: 100% !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PREMIUM CYBER-LABORATORY UI OVERHAUL
+   ═══════════════════════════════════════════════════════ */
+
+/* Glowing Plotly Chart Lines based on stroke colors */
+path.js-line {
+    stroke-width: 3.5px !important;
+}
+
+path.js-line[style*="rgb(59, 130, 246)"],
+path.js-line[style*="#3b82f6"] {
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.85)) !important;
+}
+
+path.js-line[style*="rgb(16, 185, 129)"],
+path.js-line[style*="#10b981"] {
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.85)) !important;
+}
+
+path.js-line[style*="rgb(168, 85, 247)"],
+path.js-line[style*="rgb(239, 68, 68)"],
+path.js-line[style*="#ef4444"] {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.85)) !important;
+}
+
+path.js-line[style*="rgb(245, 158, 11)"],
+path.js-line[style*="#f59e0b"] {
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.85)) !important;
+}
+
+/* Glassmorphism Card Panels Overhaul */
+.card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.5) 100%) !important;
+    backdrop-filter: blur(16px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+    border: 1px solid rgba(0, 240, 255, 0.15) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 0 20px rgba(0, 240, 255, 0.03) !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease !important;
+}
+
+.card:hover {
+    transform: translateY(-4px) !important;
+    border-color: rgba(0, 240, 255, 0.4) !important;
+    box-shadow: 0 16px 50px rgba(0, 240, 255, 0.15), inset 0 0 25px rgba(0, 240, 255, 0.06) !important;
+}
+
+/* Cybernetic Inputs & Sliders styling */
+.form-control {
+    font-family: 'Courier New', Courier, monospace !important;
+    background: rgba(8, 12, 24, 0.7) !important;
+    border: 1px solid rgba(0, 240, 255, 0.2) !important;
+    box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.02) !important;
+    color: #00f0ff !important;
+    font-weight: bold;
+}
+
+.form-control:focus {
+    border-color: #00f0ff !important;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25), inset 0 0 8px rgba(0, 240, 255, 0.05) !important;
+}
+
+.form-control:hover:not(:focus) {
+    border-color: rgba(0, 240, 255, 0.4) !important;
 }
 

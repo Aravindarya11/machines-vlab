@@ -126,22 +126,44 @@ function handleSccCSVUpload(e) {
 // ─── Graph Init ────────────────────────────────────────────────────
 function initGraph() {
     emfLayout = {
-        title: { text: 'EMF Method — OCC & SCC Characteristics', font: { color: 'var(--text-main)' } },
+        title: { 
+            text: 'EMF Method — OCC & SCC Characteristics', 
+            font: { family: 'Orbitron, sans-serif', color: 'var(--text-main)', size: 14 } 
+        },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        xaxis: { title: 'Field Current (If) A', color: 'var(--text-muted)', gridcolor: 'var(--border)' },
-        yaxis: { title: 'Open Circuit Voltage (Voc) V', color: 'var(--text-muted)', gridcolor: 'var(--border)' },
+        xaxis: { 
+            title: { text: 'Field Current (If) A', font: { family: 'Inter, sans-serif', size: 11 } }, 
+            color: 'var(--text-muted)', 
+            gridcolor: 'rgba(59, 130, 246, 0.08)',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
+        },
+        yaxis: { 
+            title: { text: 'Open Circuit Voltage (Voc) V', font: { family: 'Inter, sans-serif', size: 11 } }, 
+            color: 'var(--text-muted)', 
+            gridcolor: 'rgba(59, 130, 246, 0.08)',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
+        },
         yaxis2: {
-            title: 'Short Circuit Current (Isc) A',
+            title: { text: 'Short Circuit Current (Isc) A', font: { family: 'Inter, sans-serif', size: 11 } },
             color: '#10b981',
             overlaying: 'y',
             side: 'right',
-            gridcolor: 'transparent'
+            gridcolor: 'transparent',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
         },
-        legend: { font: { color: 'var(--text-main)' } },
+        legend: { 
+            font: { family: 'Inter, sans-serif', color: 'var(--text-main)', size: 10 },
+            bgcolor: 'rgba(15, 23, 42, 0.6)'
+        },
+        hoverlabel: {
+            bgcolor: 'rgba(8, 12, 24, 0.95)',
+            bordercolor: 'rgba(0, 240, 255, 0.6)',
+            font: { family: 'Orbitron, monospace', color: '#00f0ff', size: 11 }
+        },
         margin: { l: 60, r: 70, t: 50, b: 50 }
     };
-    Plotly.newPlot('emfGraph', [], emfLayout, { responsive: true });
+    Plotly.newPlot('emfGraph', [], emfLayout, { responsive: true, displayModeBar: false });
 }
 
 // ─── Parse Input ───────────────────────────────────────────────────

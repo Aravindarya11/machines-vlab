@@ -118,9 +118,28 @@
             </div>
         </div>
 
+        <!-- Phasor Diagram Panel -->
+        <div class="card" id="phasorCard" style="display: none;">
+            <h3 class="card-title"><i class="fa-solid fa-diagram-project"></i> Voltage Phasor Diagram</h3>
+            <div style="display: flex; justify-content: center; align-items: center; padding: 10px;">
+                <canvas id="phasorCanvas" width="520" height="300" style="border-radius: 8px; background: rgba(0,0,0,0.3);"></canvas>
+            </div>
+            <div id="phasorLegend" style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-top: 12px; font-size: 0.85rem;"></div>
+        </div>
+
+        <!-- Results Card -->
         <div class="card" id="resultsCard" style="display: none;">
-            <h3 class="card-title"><i class="fa-solid fa-calculator"></i> Results</h3>
-            <div id="calculationsText" style="line-height: 1.8;"></div>
+            <h3 class="card-title"><i class="fa-solid fa-calculator"></i> Results &amp; Calculations</h3>
+            
+            <!-- Gauge + Key Params row -->
+            <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 20px;">
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <svg id="regGauge" width="200" height="120" viewBox="0 0 200 120"></svg>
+                    <div id="gaugeLabel" style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-top: -8px;"></div>
+                </div>
+                <div id="calculationsText" style="flex: 1; line-height: 2; min-width: 240px;"></div>
+            </div>
+
             <button class="btn btn-primary mt-4" id="btnDownloadReport"><i class="fa-solid fa-download"></i> Download Report</button>
         </div>
     </div>

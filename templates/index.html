@@ -462,7 +462,13 @@ html.intro-active, body.intro-active {
                     <div class="rotor-shaft"></div>
                     <div class="rotor-pole-n">N</div>
                     <div class="rotor-pole-s">S</div>
-                    <div class="rotor-flux-lines" id="rotorFluxLines"></div>
+                    <!-- Dipole magnetic field lines inside SVG -->
+                    <svg class="rotor-flux-svg" id="rotorFluxLines" viewBox="0 0 200 200">
+                        <path class="flux-path flux-loop-inner" d="M 100 35 C 150 35, 150 165, 100 165 C 50 165, 50 35, 100 35 Z" />
+                        <path class="flux-path flux-loop-middle" d="M 100 35 C 190 35, 190 165, 100 165 C 10 165, 10 35, 100 35 Z" />
+                        <path class="flux-path flux-loop-outer" d="M 100 35 C 230 35, 230 165, 100 165 C -30 165, -30 35, 100 35 Z" />
+                        <line class="flux-path flux-center-line" x1="100" y1="35" x2="100" y2="165" />
+                    </svg>
                 </div>
             </div>
             
@@ -719,6 +725,8 @@ html.intro-active, body.intro-active {
             const scaleBase = 1.0 + (fieldCurrent / 10) * 0.15;
             rotorFluxLines.style.opacity = (fieldCurrent / 10).toFixed(2);
             rotorFluxLines.style.transform = `translate(-50%, -50%) scale(${scaleBase})`;
+            const glowSize = (fieldCurrent / 10 * 8).toFixed(1);
+            rotorFluxLines.style.filter = `drop-shadow(0 0 ${glowSize}px rgba(0, 240, 255, 0.8))`;
             
             if (frequency > 0) {
                 document.documentElement.style.setProperty('--pulse-speed-a', `${1/frequency}s`);
@@ -737,34 +745,51 @@ html.intro-active, body.intro-active {
                     voltCanvas.height = rect.height;
                 }
                 
-                voltCtx.clearRect(0, 0, voltCanvas.width, voltCanvas.height);
+                // Phosphor persistence (decay effect)
+                voltCtx.fillStyle = 'rgba(8, 12, 24, 0.18)';
+                voltCtx.fillRect(0, 0, voltCanvas.width, voltCanvas.height);
                 
                 // Draw a subtle grid background
-                voltCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                voltCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
                 voltCtx.lineWidth = 1;
                 voltCtx.beginPath();
                 for (let i = 0; i < voltCanvas.width; i += 20) {
                     voltCtx.moveTo(i, 0);
                     voltCtx.lineTo(i, voltCanvas.height);
                 }
+                for (let i = 0; i < voltCanvas.height; i += 20) {
+                    voltCtx.moveTo(0, i);
+                    voltCtx.lineTo(voltCanvas.width, i);
+                }
                 voltCtx.stroke();
-                
-                // Draw neon green sine wave
-                voltCtx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
-                voltCtx.lineWidth = 2.5;
-                voltCtx.shadowBlur = 6;
-                voltCtx.shadowColor = 'rgba(16, 185, 129, 0.7)';
-                voltCtx.beginPath();
                 
                 const amp = (E0 / 800) * (voltCanvas.height * 0.35); // Peak height depends on voltage
                 const freqScale = (frequency / 50) * 0.1 + 0.02; // Sine wave width depends on speed
                 
-                for (let x = 0; x < voltCanvas.width; x++) {
-                    const y = voltCanvas.height / 2 + Math.sin(x * freqScale + wavePhase) * amp;
-                    if (x === 0) voltCtx.moveTo(x, y);
-                    else voltCtx.lineTo(x, y);
-                }
-                voltCtx.stroke();
+                // Add a small amount of physical noise ripple
+                const noise = frequency > 0 ? (Math.random() - 0.5) * 1.5 : 0;
+                
+                // Draw Three-Phase Sine Waves (Red, Yellow, Blue)
+                const phases = [
+                    { color: 'rgba(239, 68, 68, 0.85)', glow: 'rgba(239, 68, 68, 0.7)', shift: 0 },
+                    { color: 'rgba(234, 179, 8, 0.85)', glow: 'rgba(234, 179, 8, 0.7)', shift: -2 * Math.PI / 3 },
+                    { color: 'rgba(59, 130, 246, 0.85)', glow: 'rgba(59, 130, 246, 0.7)', shift: -4 * Math.PI / 3 }
+                ];
+                
+                phases.forEach(p => {
+                    voltCtx.strokeStyle = p.color;
+                    voltCtx.lineWidth = 2.0;
+                    voltCtx.shadowBlur = 6;
+                    voltCtx.shadowColor = p.glow;
+                    voltCtx.beginPath();
+                    
+                    for (let x = 0; x < voltCanvas.width; x++) {
+                        const y = voltCanvas.height / 2 + Math.sin(x * freqScale + wavePhase + p.shift) * amp + noise;
+                        if (x === 0) voltCtx.moveTo(x, y);
+                        else voltCtx.lineTo(x, y);
+                    }
+                    voltCtx.stroke();
+                });
                 voltCtx.shadowBlur = 0; // reset
             }
             
@@ -775,23 +800,29 @@ html.intro-active, body.intro-active {
                     freqCanvas.height = rect.height;
                 }
                 
-                freqCtx.clearRect(0, 0, freqCanvas.width, freqCanvas.height);
+                // Phosphor persistence (decay effect)
+                freqCtx.fillStyle = 'rgba(8, 12, 24, 0.18)';
+                freqCtx.fillRect(0, 0, freqCanvas.width, freqCanvas.height);
                 
                 // Draw a subtle grid background
-                freqCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                freqCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
                 freqCtx.lineWidth = 1;
                 freqCtx.beginPath();
                 for (let i = 0; i < freqCanvas.width; i += 20) {
                     freqCtx.moveTo(i, 0);
                     freqCtx.lineTo(i, freqCanvas.height);
                 }
+                for (let i = 0; i < freqCanvas.height; i += 20) {
+                    freqCtx.moveTo(0, i);
+                    freqCtx.lineTo(freqCanvas.width, i);
+                }
                 freqCtx.stroke();
                 
-                // Draw neon blue/purple sine wave
-                freqCtx.strokeStyle = 'rgba(59, 130, 246, 0.85)';
-                freqCtx.lineWidth = 2.5;
+                // Draw neon cyan sine wave
+                freqCtx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+                freqCtx.lineWidth = 2.0;
                 freqCtx.shadowBlur = 6;
-                freqCtx.shadowColor = 'rgba(59, 130, 246, 0.7)';
+                freqCtx.shadowColor = 'rgba(0, 240, 255, 0.7)';
                 freqCtx.beginPath();
                 
                 const amp = frequency > 0 ? (freqCanvas.height * 0.35) : 0; // Constant amplitude if rotating

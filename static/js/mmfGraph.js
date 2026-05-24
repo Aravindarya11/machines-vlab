@@ -156,25 +156,47 @@ function handleSccCSVUpload(e) {
 
 function initGraph() {
     mmfLayout = {
-        title: { text: 'MMF Method Characteristics', font: { color: 'var(--text-main)' } },
+        title: { 
+            text: 'MMF Method Characteristics', 
+            font: { family: 'Orbitron, sans-serif', color: 'var(--text-main)', size: 14 } 
+        },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        xaxis: { title: 'Field Current (If) A', color: 'var(--text-muted)', gridcolor: 'var(--border)' },
-        yaxis: { title: 'Voltage (V)', color: 'var(--text-muted)', gridcolor: 'var(--border)' },
+        xaxis: { 
+            title: { text: 'Field Current (If) A', font: { family: 'Inter, sans-serif', size: 11 } }, 
+            color: 'var(--text-muted)', 
+            gridcolor: 'rgba(59, 130, 246, 0.08)',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
+        },
+        yaxis: { 
+            title: { text: 'Voltage (V)', font: { family: 'Inter, sans-serif', size: 11 } }, 
+            color: 'var(--text-muted)', 
+            gridcolor: 'rgba(59, 130, 246, 0.08)',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
+        },
         yaxis2: {
-            title: 'Current (A)',
+            title: { text: 'Current (A)', font: { family: 'Inter, sans-serif', size: 11 } },
             color: 'var(--accent)',
             overlaying: 'y',
             side: 'right',
-            gridcolor: 'transparent'
+            gridcolor: 'transparent',
+            tickfont: { family: 'Orbitron, monospace', size: 9 }
         },
-        legend: { font: { color: 'var(--text-main)' } },
+        legend: { 
+            font: { family: 'Inter, sans-serif', color: 'var(--text-main)', size: 10 },
+            bgcolor: 'rgba(15, 23, 42, 0.6)'
+        },
+        hoverlabel: {
+            bgcolor: 'rgba(8, 12, 24, 0.95)',
+            bordercolor: 'rgba(0, 240, 255, 0.6)',
+            font: { family: 'Orbitron, monospace', color: '#00f0ff', size: 11 }
+        },
         margin: { l: 60, r: 60, t: 50, b: 50 },
         shapes: [],
         annotations: []
     };
 
-    Plotly.newPlot('mmfGraph', [], mmfLayout, {responsive: true});
+    Plotly.newPlot('mmfGraph', [], mmfLayout, {responsive: true, displayModeBar: false});
 }
 
 function parseInput() {
@@ -394,6 +416,7 @@ async function startAnimation() {
     document.getElementById('btnStart').disabled = true;
     
     let traceIdx = 0;
+    let If1, If2, If2_angle, If0x, If0y, If0;
 
     // ─────── STEP 1: Plot OCC data points ───────
     await animateStep(1, "Plotting Open Circuit Characteristic (OCC) test data points.", () => {
@@ -442,7 +465,7 @@ async function startAnimation() {
     // ─────── STEP 5: Find If1 — field current for rated voltage from OCC ───────
     await animateStep(5, "Finding <b>If1</b> — the field current corresponding to <b>rated voltage</b> from the OCC curve.", async () => {
         const V_rated = data.ratedV; // Line voltage
-        const If1 = interpolateYtoX(data.occIf, data.occVoc, V_rated);
+        If1 = interpolateYtoX(data.occIf, data.occVoc, V_rated);
         calcResults.If1 = If1;
         calcResults.V_rated = V_rated;
         calcResults.V_phase = V_rated / Math.sqrt(3);
@@ -476,7 +499,7 @@ async function startAnimation() {
     // ─────── STEP 6: Find If2 — field current for rated current from SCC ───────
     await animateStep(6, "Finding <b>If2</b> — the field current corresponding to <b>rated armature current</b> from the SCC line.", async () => {
         const Ia = data.ratedI;
-        const If2 = Ia / calcResults.sccSlope;
+        If2 = Ia / calcResults.sccSlope;
         calcResults.If2 = If2;
         
         // Draw horizontal dashed line on SCC axis at rated current
@@ -513,8 +536,8 @@ async function startAnimation() {
         "If2 is placed at angle <b>(90° + φ)</b> for lagging (or 90° − φ for leading) from If1. " +
         "We swing an arc of radius equal to the magnitude of If0 to project it onto the horizontal field current axis.", async () => {
         
-        const If1 = calcResults.If1;
-        const If2 = calcResults.If2;
+        If1 = calcResults.If1;
+        If2 = calcResults.If2;
         const phi = Math.acos(data.pf); // power factor angle in radians
         
         let angleBetween; 
@@ -526,7 +549,6 @@ async function startAnimation() {
             angleBetween = Math.PI / 2;
         }
         
-        let If2_angle;
         if (data.pfType === 'lagging') {
             If2_angle = Math.PI - (Math.PI/2 + phi); // = π/2 - φ
         } else if (data.pfType === 'leading') {
@@ -538,9 +560,9 @@ async function startAnimation() {
         const If2x = If2 * Math.cos(If2_angle);
         const If2y = If2 * Math.sin(If2_angle);
         
-        const If0x = If1 + If2x;
-        const If0y = If2y;
-        const If0 = Math.sqrt(If0x * If0x + If0y * If0y);
+        If0x = If1 + If2x;
+        If0y = If2y;
+        If0 = Math.sqrt(If0x * If0x + If0y * If0y);
         
         calcResults.If0 = If0;
         calcResults.angleBetween = angleBetween;
@@ -693,8 +715,13 @@ async function startAnimation() {
             <hr style="border-color: var(--border); margin: 8px 0;">
             <strong>E0 (Line-to-Line):</strong> ${E0_line.toFixed(2)} V<br>
             <strong>E0 (Phase):</strong> ${E0_phase.toFixed(2)} V<br>
-            <strong style="color: var(--primary); font-size: 1.2rem;">Voltage Regulation: ${reg.toFixed(2)} %</strong>
         `;
+        
+        // Draw the regulation gauge and phasor diagram
+        drawRegulationGauge(reg);
+        document.getElementById('phasorCard').style.display = 'block';
+        drawPhasorDiagram(If1, If2, If2_angle, If0x, If0y, If0, data.pfType);
+
         showToast('Animation Complete!', 'success');
         updateStatusLED('ready');
         document.getElementById('btnStart').disabled = false;
@@ -706,6 +733,7 @@ function resetGraph() {
     isPaused = false;
     document.getElementById('btnStart').disabled = false;
     document.getElementById('resultsCard').style.display = 'none';
+    document.getElementById('phasorCard').style.display = 'none';
     document.getElementById('explanationText').innerHTML = "Welcome to the MMF Method simulation. Enter data and start the animation.";
     updateStatusLED('ready');
     initGraph();
@@ -729,4 +757,136 @@ function generateReport() {
     csv += `Voltage Regulation,${calcResults.reg.toFixed(2)} %\n`;
     
     downloadCSV('MMF_Lab_Report.csv', csv);
+}
+
+// ─── SVG Regulation Gauge ──────────────────────────────────────────
+function drawRegulationGauge(regPercent) {
+    const svg = document.getElementById('regGauge');
+    if (!svg) return;
+    const maxReg = 100;
+    const clampedReg = Math.min(Math.max(regPercent, 0), maxReg);
+    const fraction = clampedReg / maxReg;
+
+    const cx = 100, cy = 100, r = 75;
+    const startAngle = Math.PI;
+    const endAngle = 0;
+
+    function arcPath(fromFrac, toFrac, color) {
+        const ang1 = Math.PI - fromFrac * Math.PI;
+        const ang2 = Math.PI - toFrac * Math.PI;
+        const x1 = cx + r * Math.cos(ang1), y1 = cy - r * Math.sin(ang1);
+        const x2 = cx + r * Math.cos(ang2), y2 = cy - r * Math.sin(ang2);
+        const largeArc = (toFrac - fromFrac) > 0.5 ? 1 : 0;
+        return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round"/>`;
+    }
+
+    const bgX1 = cx + r * Math.cos(Math.PI), bgY1 = cy - r * Math.sin(Math.PI);
+    const bgX2 = cx + r * Math.cos(0), bgY2 = cy - r * Math.sin(0);
+    const bgArc = `<path d="M ${bgX1} ${bgY1} A ${r} ${r} 0 0 1 ${bgX2} ${bgY2}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14"/>`;
+
+    const greenArc = arcPath(0, 0.20, '#10b981');
+    const amberArc = arcPath(0.20, 0.40, '#f59e0b');
+    const redArc   = arcPath(0.40, 1.0, '#ef4444');
+
+    const needleX = cx + (r - 10) * Math.cos(Math.PI - fraction * Math.PI);
+    const needleY = cy - (r - 10) * Math.sin(Math.PI - fraction * Math.PI);
+    const needle = `<line x1="${cx}" y1="${cy}" x2="${needleX}" y2="${needleY}" stroke="${regPercent > 40 ? '#ef4444' : regPercent > 20 ? '#f59e0b' : '#10b981'}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="var(--text-muted)"/>`;
+
+    const ticks = ['0', '20', '40', '60', '80', '100'].map((val, i) => {
+        const frac = i / 5;
+        const angle = Math.PI - frac * Math.PI;
+        const tx = cx + (r + 14) * Math.cos(angle);
+        const ty = cy - (r + 14) * Math.sin(angle);
+        return `<text x="${tx}" y="${ty}" text-anchor="middle" dominant-baseline="middle" font-size="8" fill="rgba(255,255,255,0.4)" font-family="monospace">${val}%</text>`;
+    }).join('');
+
+    svg.innerHTML = bgArc + greenArc + amberArc + redArc + needle + ticks;
+
+    const color = regPercent > 40 ? '#ef4444' : regPercent > 20 ? '#f59e0b' : '#10b981';
+    document.getElementById('gaugeLabel').innerHTML =
+        `<span style="color:${color}; font-size:1.5rem;">${regPercent.toFixed(2)}%</span><br>
+         <span style="color:var(--text-muted); font-size:0.75rem;">Voltage Regulation</span>`;
+}
+
+// ─── MMF (Field Current) Phasor Canvas Drawing ──────────────────────
+function drawPhasorDiagram(If1, If2, If2_angle, If0x, If0y, If0, pfType) {
+    const canvas = document.getElementById('phasorCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Compute scale
+    const maxLen = Math.max(If1, If0, If1 + If2) * 1.15;
+    const scale = (W * 0.7) / maxLen;
+
+    const cx = W * 0.1, cy = H * 0.75; // origin
+
+    // Coordinate tips
+    const tx1 = cx + If1 * scale;
+    const ty1 = cy;
+
+    const tx0 = cx + If0x * scale;
+    const ty0 = cy - If0y * scale; // canvas y is inverted
+
+    // Draw grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    function drawArrow(x0, y0, x1, y1, color, label, labelPos) {
+        const angle = Math.atan2(y1 - y0, x1 - x0);
+        const len = Math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2);
+        if (len < 2) return;
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Arrowhead
+        const aLen = 10;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 - aLen * Math.cos(angle - 0.35), y1 - aLen * Math.sin(angle - 0.35));
+        ctx.lineTo(x1 - aLen * Math.cos(angle + 0.35), y1 - aLen * Math.sin(angle + 0.35));
+        ctx.closePath();
+        ctx.fill();
+
+        // Label
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = color;
+        const lx = labelPos ? labelPos.x : (x0 + x1) / 2 + 8;
+        const ly = labelPos ? labelPos.y : (y0 + y1) / 2 - 6;
+        ctx.fillText(label, lx, ly);
+    }
+
+    // Draw If1 (Excitation Current for rated voltage)
+    drawArrow(cx, cy, tx1, ty1, '#3b82f6', `If1 = ${If1.toFixed(2)}A`);
+
+    // Draw If2 (Armature reaction equivalent excitation)
+    drawArrow(tx1, ty1, tx0, ty0, '#ef4444', `If2 = ${If2.toFixed(2)}A`);
+
+    // Draw Resultant If0
+    ctx.setLineDash([6, 3]);
+    drawArrow(cx, cy, tx0, ty0, '#a855f7', `If0 = ${If0.toFixed(2)}A`, 
+        { x: (cx + tx0) / 2 - 40, y: (cy + ty0) / 2 - 8 });
+    ctx.setLineDash([]);
+
+    // Legend
+    const legend = document.getElementById('phasorLegend');
+    legend.innerHTML = `
+        <span style="color:#3b82f6"><i class="fa-solid fa-minus"></i> If1 (Field current for V_rated)</span>
+        <span style="color:#ef4444"><i class="fa-solid fa-minus"></i> If2 (Equivalent field current for armature reaction)</span>
+        <span style="color:#a855f7"><i class="fa-solid fa-minus" style="text-decoration:underline dotted"></i> If0 (Resultant field current)</span>
+    `;
 }
