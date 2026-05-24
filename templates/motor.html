@@ -1,0 +1,1229 @@
+{% extends 'base.html' %}
+
+{% block title %}Motor Inspector | EMVL{% endblock %}
+{% block page_title %}Synchronous Motor Inspector{% endblock %}
+
+{% block content %}
+<!-- ─── Interactive Synchronous Motor Part Inspector & Encyclopedia Section ─── -->
+<div class="machine-visualizer-card motor-inspector-card" style="margin-top: 10px; margin-bottom: 20px;">
+    <!-- Tab Switcher Navigation -->
+    <div class="motor-tabs-header" style="display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <button class="tab-btn active" data-tab="schematic" style="background: none; border: none; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 6px 12px; display: flex; align-items: center; gap: 8px; transition: var(--transition);"><i class="fa-solid fa-compass"></i> Schematic Inspector</button>
+        <button class="tab-btn" data-tab="industrial" style="background: none; border: none; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 6px 12px; display: flex; align-items: center; gap: 8px; transition: var(--transition);"><i class="fa-solid fa-industry"></i> Industrial Cutaway Inspector</button>
+    </div>
+
+    <!-- Container for Tab 1: Schematic Inspector -->
+    <div class="tab-content active" id="tab-schematic">
+        <div class="machine-visualizer-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-compass" style="font-size: 1.6rem; color: var(--accent); animation: pulse-glow 2s infinite ease-in-out;"></i>
+                <span>Interactive Synchronous Motor Encyclopedia</span>
+            </div>
+            <span style="font-size: 0.75rem; font-family: 'Orbitron', monospace; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); letter-spacing: 0.5px;">MODE: DETAILED PART SCAN</span>
+        </div>
+        
+        <div class="motor-inspector-layout">
+        <!-- Part Selection List -->
+        <div class="motor-parts-list">
+            <div class="parts-list-header">MOTOR COMPONENTS</div>
+            <button class="part-item active" data-part="stator-core"><i class="fa-solid fa-circle-nodes"></i> Stator Core & Windings</button>
+            <button class="part-item" data-part="frame"><i class="fa-solid fa-layer-group"></i> Stator Frame (Yoke)</button>
+            <button class="part-item" data-part="rotor-core"><i class="fa-solid fa-dharmachakra"></i> Salient Pole Rotor Core</button>
+            <button class="part-item" data-part="field-coils"><i class="fa-solid fa-industry"></i> Field Windings (Coils)</button>
+            <button class="part-item" data-part="damper-windings"><i class="fa-solid fa-bars"></i> Damper Windings (Bars)</button>
+            <button class="part-item" data-part="shaft"><i class="fa-solid fa-arrows-spin"></i> Central Rotor Shaft</button>
+            <button class="part-item" data-part="slip-rings"><i class="fa-solid fa-ring"></i> Slip Rings & Brushes</button>
+        </div>
+
+        <!-- SVG Schematic Viewport -->
+        <div class="motor-svg-viewport" style="position: relative;">
+            <!-- Viewport Control Panel overlay -->
+            <div class="viewport-controls-overlay" style="position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 10;">
+                <button class="view-mode-btn active" id="mode-normal" title="Normal View"><i class="fa-solid fa-eye"></i> <span>Normal</span></button>
+                <button class="view-mode-btn" id="mode-xray" title="X-Ray Casing Transparency"><i class="fa-solid fa-bone"></i> <span>X-Ray</span></button>
+                <button class="view-mode-btn" id="mode-exploded" title="Exploded Layer View"><i class="fa-solid fa-burst"></i> <span>Exploded</span></button>
+            </div>
+            <button class="maximize-btn" id="schematicMaximize" title="Toggle Fullscreen" style="position: absolute; top: 15px; right: 15px; z-index: 10;"><i class="fa-solid fa-expand"></i></button>
+            <button class="reset-zoom-btn" id="resetZoom" title="Reset Viewport" style="position: absolute; bottom: 15px; right: 15px; z-index: 10; display: none;"><i class="fa-solid fa-maximize"></i> Reset View</button>
+
+
+            <svg id="synchronousMotorSvg" viewBox="0 0 320 320" width="100%" height="100%">
+                <defs>
+                    <!-- Linear gradients for steel/copper look -->
+                    <linearGradient id="shaftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#94a3b8" />
+                        <stop offset="50%" stop-color="#475569" />
+                        <stop offset="100%" stop-color="#1e293b" />
+                    </linearGradient>
+                    <linearGradient id="rotorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#64748b" />
+                        <stop offset="100%" stop-color="#0f172a" />
+                    </linearGradient>
+                    <!-- Filters for glowing parts -->
+                    <filter id="svgNeonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                    <!-- Arrowhead marker for micro-details -->
+                    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c" />
+                    </marker>
+                </defs>
+
+                <!-- HUD circles background -->
+                <circle cx="160" cy="160" r="150" fill="none" stroke="rgba(59, 130, 246, 0.05)" stroke-width="1" />
+                <circle cx="160" cy="160" r="132" fill="none" stroke="rgba(59, 130, 246, 0.05)" stroke-dasharray="4,4" />
+
+                <!-- Outer Frame (Yoke) -->
+                <g class="motor-svg-part" id="svg-frame" data-part="frame">
+                    <!-- Frame cooling fins / ribs -->
+                    <path d="M 160 8 L 160 20 M 160 300 L 160 312 M 8 160 L 20 160 M 300 160 L 312 160 M 52 52 L 61 61 M 268 268 L 259 259 M 52 268 L 61 259 M 268 52 L 259 61" stroke="rgba(59, 130, 246, 0.4)" stroke-width="4" stroke-linecap="round" />
+                    <circle cx="160" cy="160" r="140" fill="none" stroke="rgba(30, 41, 59, 0.9)" stroke-width="12" />
+                    <circle cx="160" cy="160" r="144" fill="none" stroke="rgba(59, 130, 246, 0.5)" stroke-width="2" />
+                </g>
+
+                <!-- Stator Core Ring -->
+                <g class="motor-svg-part" id="svg-stator-core" data-part="stator-core">
+                    <circle cx="160" cy="160" r="122" fill="none" stroke="rgba(15, 23, 42, 0.95)" stroke-width="24" />
+                    <circle cx="160" cy="160" r="110" fill="none" stroke="rgba(51, 65, 85, 0.8)" stroke-width="2" />
+                    <circle cx="160" cy="160" r="134" fill="none" stroke="rgba(51, 65, 85, 0.8)" stroke-width="1" />
+                </g>
+
+                <!-- Stator Windings (3-Phase Slots) -->
+                <g class="motor-svg-part" id="svg-windings" data-part="stator-core">
+                    <!-- Slot Coils Red (Phase A), Yellow (Phase B), Blue (Phase C) -->
+                    <!-- 12 slots evenly spaced -->
+                    <!-- R (0), Y (30), B (60), R (90), Y (120), B (150)... -->
+                    <circle cx="160" cy="40" r="5" fill="#ef4444" stroke="#f87171" stroke-width="1" class="phase-coil" />
+                    <circle cx="220" cy="56" r="5" fill="#eab308" stroke="#facc15" stroke-width="1" class="phase-coil" />
+                    <circle cx="264" cy="100" r="5" fill="#3b82f6" stroke="#60a5fa" stroke-width="1" class="phase-coil" />
+                    <circle cx="280" cy="160" r="5" fill="#ef4444" stroke="#f87171" stroke-width="1" class="phase-coil" />
+                    <circle cx="264" cy="220" r="5" fill="#eab308" stroke="#facc15" stroke-width="1" class="phase-coil" />
+                    <circle cx="220" cy="264" r="5" fill="#3b82f6" stroke="#60a5fa" stroke-width="1" class="phase-coil" />
+                    <circle cx="160" cy="280" r="5" fill="#ef4444" stroke="#f87171" stroke-width="1" class="phase-coil" />
+                    <circle cx="100" cy="264" r="5" fill="#eab308" stroke="#facc15" stroke-width="1" class="phase-coil" />
+                    <circle cx="56" cy="220" r="5" fill="#3b82f6" stroke="#60a5fa" stroke-width="1" class="phase-coil" />
+                    <circle cx="40" cy="160" r="5" fill="#ef4444" stroke="#f87171" stroke-width="1" class="phase-coil" />
+                    <circle cx="56" cy="100" r="5" fill="#eab308" stroke="#facc15" stroke-width="1" class="phase-coil" />
+                    <circle cx="100" cy="56" r="5" fill="#3b82f6" stroke="#60a5fa" stroke-width="1" class="phase-coil" />
+                </g>
+
+                <!-- Field Windings (Coils wound on rotor salient poles) -->
+                <g class="motor-svg-part" id="svg-field-coils" data-part="field-coils">
+                    <!-- Top Pole Coils -->
+                    <rect x="133" y="62" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <rect x="177" y="62" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <!-- Bottom Pole Coils -->
+                    <rect x="133" y="230" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <rect x="177" y="230" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <!-- Left Pole Coils -->
+                    <rect x="62" y="133" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <rect x="62" y="177" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <!-- Right Pole Coils -->
+                    <rect x="230" y="133" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    <rect x="230" y="177" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                </g>
+
+                <!-- Rotor Core (4 Salient Poles) -->
+                <g class="motor-svg-part" id="svg-rotor-core" data-part="rotor-core">
+                    <!-- Shaft hub -->
+                    <circle cx="160" cy="160" r="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1.5" />
+                    <!-- Salient pole bodies -->
+                    <rect x="143" y="60" width="34" height="40" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <rect x="143" y="220" width="34" height="40" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <rect x="60" y="143" width="40" height="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <rect x="220" y="143" width="40" height="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <!-- Curved Pole Shoes -->
+                    <path d="M 125 60 C 125 60, 160 50, 195 60 L 190 68 L 130 68 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <path d="M 125 260 C 125 260, 160 270, 195 260 L 190 252 L 130 252 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <path d="M 60 125 C 60 125, 50 160, 60 195 L 68 190 L 68 130 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    <path d="M 260 125 C 260 125, 270 160, 260 195 L 252 190 L 252 130 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                </g>
+
+                <!-- Damper Windings (Amortisseur copper bars inside pole shoes) -->
+                <g class="motor-svg-part" id="svg-damper-windings" data-part="damper-windings">
+                    <!-- Top pole shoe bars -->
+                    <circle cx="138" cy="62" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="160" cy="59" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="182" cy="62" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <!-- Bottom pole shoe bars -->
+                    <circle cx="138" cy="258" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="160" cy="261" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="182" cy="258" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <!-- Left pole shoe bars -->
+                    <circle cx="62" cy="138" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="59" cy="160" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="62" cy="182" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <!-- Right pole shoe bars -->
+                    <circle cx="258" cy="138" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="261" cy="160" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    <circle cx="258" cy="182" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                </g>
+
+                <!-- Central Shaft -->
+                <g class="motor-svg-part" id="svg-shaft" data-part="shaft">
+                    <circle cx="160" cy="160" r="18" fill="url(#shaftGrad)" stroke="#475569" stroke-width="2" />
+                    <!-- keyway slot -->
+                    <rect x="156" y="142" width="8" height="6" fill="#334155" stroke="#475569" stroke-width="1" />
+                </g>
+
+                <!-- Slip Rings Inset box (telemetry detailed view) -->
+                <g class="motor-svg-part" id="svg-slip-rings" data-part="slip-rings">
+                    <!-- Sub-diagram bounding box -->
+                    <rect x="210" y="210" width="95" height="95" rx="8" fill="rgba(8, 12, 24, 0.85)" stroke="rgba(59, 130, 246, 0.25)" stroke-width="1" />
+                    <!-- Dual concentric slip rings -->
+                    <circle cx="258" cy="252" r="22" fill="none" stroke="#ea580c" stroke-width="3" id="slipRing1" />
+                    <circle cx="258" cy="252" r="13" fill="none" stroke="#d97706" stroke-width="3" id="slipRing2" />
+                    <!-- Brushes riding on them -->
+                    <rect x="228" y="249" width="7" height="6" fill="#0f172a" stroke="#60a5fa" stroke-width="0.5" />
+                    <rect x="279" y="249" width="7" height="6" fill="#0f172a" stroke="#60a5fa" stroke-width="0.5" />
+                    <!-- Cables -->
+                    <path d="M 230 252 L 218 252" fill="none" stroke="#ef4444" stroke-width="1" />
+                    <path d="M 284 252 L 298 252" fill="none" stroke="#3b82f6" stroke-width="1" />
+                    <text x="258" y="293" font-family="Orbitron" font-size="7.5" fill="rgba(59, 130, 246, 0.6)" text-anchor="middle" letter-spacing="0.5px">EXC. CONTACTS</text>
+                </g>
+
+                <!-- Microscopic Callouts & Text Overlay Group -->
+                <g id="detail-stator-core" class="zoom-only-detail">
+                    <circle cx="160" cy="160" r="130" fill="none" stroke="rgba(0, 240, 255, 0.15)" stroke-width="0.5" stroke-dasharray="0.5, 1" />
+                    <circle cx="160" cy="160" r="126" fill="none" stroke="rgba(0, 240, 255, 0.1)" stroke-width="0.5" stroke-dasharray="0.5, 1" />
+                    <!-- Insulation slot liner -->
+                    <rect x="154" y="34" width="12" height="12" rx="1.5" fill="none" stroke="#00f0ff" stroke-width="0.35" stroke-dasharray="0.8,0.8" />
+                    <line x1="154" y1="40" x2="122" y2="40" class="callout-line" />
+                    <text x="119" y="41.5" class="callout-text" text-anchor="end">Insulated Slot Liner (Nomex)</text>
+                    <line x1="160" y1="28" x2="185" y2="20" class="callout-line" />
+                    <text x="188" y="21.5" class="callout-text" text-anchor="start">Silicon Steel Sheet Laminations</text>
+                </g>
+
+                <g id="detail-frame" class="zoom-only-detail">
+                    <line x1="160" y1="12" x2="185" y2="22" class="callout-line" />
+                    <text x="188" y="23.5" class="callout-text" text-anchor="start">Convective Cooling Fins</text>
+                    <line x1="60" y1="60" x2="35" y2="45" class="callout-line" />
+                    <text x="32" y="44" class="callout-text" text-anchor="end">Cast Steel Frame Casing</text>
+                </g>
+
+                <g id="detail-rotor-core" class="zoom-only-detail">
+                    <line x1="160" y1="80" x2="195" y2="92" class="callout-line" />
+                    <text x="198" y="93.5" class="callout-text" text-anchor="start">Projecting Salient Pole Body</text>
+                    <line x1="130" y1="68" x2="108" y2="60" class="callout-line" />
+                    <text x="105" y="59" class="callout-text" text-anchor="end">Interlocking Pole Shoe Joint</text>
+                </g>
+
+                <g id="detail-field-coils" class="zoom-only-detail">
+                    <!-- Draw coil inner turns cross sections -->
+                    <rect x="135" y="65" width="6" height="22" fill="none" stroke="rgba(250, 204, 21, 0.4)" stroke-width="0.3" stroke-dasharray="0.5,0.5" />
+                    <rect x="179" y="65" width="6" height="22" fill="none" stroke="rgba(250, 204, 21, 0.4)" stroke-width="0.3" stroke-dasharray="0.5,0.5" />
+                    <line x1="138" y1="76" x2="105" y2="76" class="callout-line" />
+                    <text x="102" y="77" class="callout-text" text-anchor="end">Copper Winding Turns</text>
+                    <line x1="179" y1="76" x2="205" y2="70" class="callout-line" />
+                    <text x="208" y="71" class="callout-text" text-anchor="start">Class H Layer Insulation</text>
+                </g>
+
+                <g id="detail-damper-windings" class="zoom-only-detail">
+                    <!-- Flow arrows showing damper bar currents during starting induction -->
+                    <path d="M 138 66 L 138 58" fill="none" stroke="#ea580c" stroke-width="0.35" marker-end="url(#arrow)" />
+                    <path d="M 160 63 L 160 55" fill="none" stroke="#ea580c" stroke-width="0.35" marker-end="url(#arrow)" />
+                    <line x1="138" y1="62" x2="105" y2="52" class="callout-line" />
+                    <text x="102" y="51.5" class="callout-text" text-anchor="end">Amortisseur Winding Bar</text>
+                    <line x1="182" y1="62" x2="202" y2="52" class="callout-line" />
+                    <text x="205" y="51.5" class="callout-text" text-anchor="start">Short-Circuiting End Segment</text>
+                </g>
+
+                <g id="detail-shaft" class="zoom-only-detail">
+                    <line x1="156" y1="145" x2="132" y2="138" class="callout-line" />
+                    <text x="129" y="137.5" class="callout-text" text-anchor="end">Torque-Lock Keyway</text>
+                    <line x1="164" y1="168" x2="185" y2="180" class="callout-line" />
+                    <text x="188" y="181.5" class="callout-text" text-anchor="start">Forged High-Tensile Steel</text>
+                </g>
+
+                <g id="detail-slip-rings" class="zoom-only-detail">
+                    <!-- Tension Spring representation inside diagnostic box -->
+                    <path d="M 231.5 249 L 231.5 242 C 231.5 242, 233 243, 233 241 C 233 239, 230 240, 230 238 C 230 236, 233 237, 233 235 L 231.5 230" fill="none" stroke="#00f0ff" stroke-width="0.4" />
+                    <line x1="228" y1="252" x2="218" y2="242" class="callout-line" />
+                    <text x="215" y="241" class="callout-text" text-anchor="end">Carbon Brush Contact Surface</text>
+                    <line x1="231.5" y1="234" x2="242" y2="222" class="callout-line" />
+                    <text x="245" y="221" class="callout-text" text-anchor="start">Helical Compression Spring</text>
+                    <line x1="258" y1="265" x2="258" y2="280" class="callout-line" />
+                    <text x="258" y="284.5" class="callout-text" text-anchor="middle">Bronze Alloy Concentric Rings</text>
+                </g>
+            </svg>
+        </div>
+
+        <!-- Encyclopedia Info Panel -->
+        <div class="motor-details-pane">
+            <!-- Glassmorphic HUD Display -->
+            <div class="motor-details-hud">
+                <div class="hud-top-meta">
+                    <span class="hud-badge" id="hudPartCode">[PART.ST_WINDINGS]</span>
+                    <span class="hud-status-led ready"><span class="led-dot"></span> <span id="hudPartMaterial">LAMINATED SILICON STEEL</span></span>
+                </div>
+                
+                <h2 class="hud-part-title" id="hudPartTitle">Stator Core & Windings</h2>
+                
+                <div class="hud-divider"></div>
+                
+                <div class="hud-detail-group">
+                    <div class="hud-label">PRIMARY FUNCTION:</div>
+                    <p class="hud-value-highlight" id="hudPartFunction">Generates the Rotating Magnetic Field (RMF) when supplied with three-phase AC power.</p>
+                </div>
+                
+                <div class="hud-detail-group" style="margin-top: 15px;">
+                    <div class="hud-label">TECHNICAL ENCYCLOPEDIA ANALYSIS:</div>
+                    <p class="hud-value-text" id="hudPartDescription">The stator core is built from thin, insulated laminations of silicon steel to minimize eddy current losses. The inner slots house three-phase AC windings arranged 120° electrical degrees apart. When energized, they produce a continuous magnetic field rotating at synchronous speed (Ns).</p>
+                </div>
+
+                <!-- Equation/Formula Telemetry Card -->
+                <div class="hud-formula-card" id="hudFormulaCard">
+                    <div class="formula-header">
+                        <i class="fa-solid fa-square-root-variable" style="color: var(--accent);"></i>
+                        <span id="hudFormulaLabel">Synchronous Speed Calculation</span>
+                    </div>
+                    <div class="formula-math-display" id="hudFormulaDisplay">
+                        \[N_s = \frac{120 \cdot f}{P} \text{ RPM}\]
+                    </div>
+                </div>
+
+                <!-- Working Principle Mini Animation / Telemetry Panel -->
+                <div class="hud-animation-panel">
+                    <div class="animation-panel-header">
+                        <i class="fa-solid fa-microchip" style="color: var(--primary);"></i>
+                        <span>FUNCTIONAL SCHEMATIC OSCILLOSCOPE</span>
+                    </div>
+                    <div class="animation-viewport-frame">
+                        <canvas id="partScopeCanvas" class="part-scope-canvas" width="300" height="60"></canvas>
+                    </div>
+                </div>
+        </div>
+    </div>
+    <!-- End of Schematic Tab Container -->
+    </div>
+    </div>
+
+    <!-- Container for Tab 2: Industrial Cutaway Inspector -->
+
+    <div class="tab-content" id="tab-industrial" style="display: none;">
+        <!-- Industrial Viewport (occupies the full width!) -->
+        <div class="industrial-viewport" style="width: 100%; height: 500px; background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 16px; position: relative; overflow: hidden; box-shadow: inset 0 0 40px rgba(0,0,0,0.85);">
+            <!-- Viewport Control Panel overlay -->
+            <div class="viewport-controls-overlay" style="position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 10;">
+                <button class="view-mode-btn active" id="ind-mode-normal" title="Normal View"><i class="fa-solid fa-eye"></i> <span>Normal</span></button>
+                <button class="view-mode-btn" id="ind-mode-xray" title="X-Ray Casing Transparency"><i class="fa-solid fa-bone"></i> <span>X-Ray</span></button>
+            </div>
+            <button class="maximize-btn" id="industrialMaximize" title="Toggle Fullscreen" style="position: absolute; top: 15px; right: 15px; z-index: 10;"><i class="fa-solid fa-expand"></i></button>
+            <button class="reset-zoom-btn" id="indResetZoom" title="Reset Viewport" style="position: absolute; bottom: 15px; left: 15px; z-index: 10; display: none;"><i class="fa-solid fa-maximize"></i> Reset View</button>
+
+            
+            <!-- Large Industrial SVG -->
+            <svg id="industrialMotorSvg" viewBox="0 0 800 450" width="100%" height="100%" style="width: 100%; height: 100%; display: block;">
+                <defs>
+                    <!-- Realistic shading gradients -->
+                    <linearGradient id="indShaftGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#e2e8f0" />
+                        <stop offset="30%" stop-color="#94a3b8" />
+                        <stop offset="70%" stop-color="#475569" />
+                        <stop offset="100%" stop-color="#1e293b" />
+                    </linearGradient>
+                    <linearGradient id="indCopperGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fdba74" />
+                        <stop offset="50%" stop-color="#ea580c" />
+                        <stop offset="100%" stop-color="#7c2d12" />
+                    </linearGradient>
+                    <linearGradient id="indGoldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a" />
+                        <stop offset="40%" stop-color="#f59e0b" />
+                        <stop offset="85%" stop-color="#d97706" />
+                        <stop offset="100%" stop-color="#78350f" />
+                    </linearGradient>
+                    <linearGradient id="indBronzeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fde047" />
+                        <stop offset="50%" stop-color="#ca8a04" />
+                        <stop offset="100%" stop-color="#854d0e" />
+                    </linearGradient>
+                    <linearGradient id="indFrameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#0ea5e9" />
+                        <stop offset="30%" stop-color="#0284c7" />
+                        <stop offset="75%" stop-color="#0369a1" />
+                        <stop offset="100%" stop-color="#1e3a8a" />
+                    </linearGradient>
+                    <linearGradient id="indBaseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#334155" />
+                        <stop offset="100%" stop-color="#0f172a" />
+                    </linearGradient>
+                    <linearGradient id="indFinGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#1e3a8a" />
+                        <stop offset="50%" stop-color="#0284c7" />
+                        <stop offset="100%" stop-color="#1e3a8a" />
+                    </linearGradient>
+                    <linearGradient id="indCoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#64748b" />
+                        <stop offset="100%" stop-color="#334155" />
+                    </linearGradient>
+                    <!-- Shadow filters -->
+                    <filter id="indShadow" x="-10%" y="-10%" width="120%" height="120%">
+                        <feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.5"/>
+                    </filter>
+                </defs>
+
+                <!-- Grid/Diagnostic Background -->
+                <rect width="100%" height="100%" fill="none" stroke="rgba(59, 130, 246, 0.02)" stroke-width="10" />
+                
+                <!-- Shaft (extends full length) -->
+                <g class="motor-svg-part" id="ind-shaft" data-part="shaft" style="cursor: pointer;">
+                    <!-- Full-length central shaft -->
+                    <rect x="70" y="230" width="660" height="30" rx="4" fill="url(#indShaftGrad)" stroke="#0f172a" />
+                    <!-- Drive end keyway -->
+                    <rect x="85" y="230" width="40" height="5" fill="#0f172a" rx="1" />
+                </g>
+
+                <!-- Stator Core Backing (visible inside cutout window) -->
+                <g class="motor-svg-part" id="ind-stator-core" data-part="stator-core" style="cursor: pointer;">
+                    <!-- Laminated Core stack inside upper slot -->
+                    <rect x="320" y="140" width="220" height="35" fill="url(#indCoreGrad)" stroke="#1e293b" />
+                    <!-- Laminations marks -->
+                    <path d="M 330 140 L 330 175 M 340 140 L 340 175 M 350 140 L 350 175 M 360 140 L 360 175 M 370 140 L 370 175 M 380 140 L 380 175 M 390 140 L 390 175 M 400 140 L 400 175 M 410 140 L 410 175 M 420 140 L 420 175 M 430 140 L 430 175 M 440 140 L 440 175 M 450 140 L 450 175 M 460 140 L 460 175 M 470 140 L 470 175 M 480 140 L 480 175 M 490 140 L 490 175 M 500 140 L 500 175 M 510 140 L 510 175 M 520 140 L 520 175 M 530 140 L 530 175" stroke="#0f172a" stroke-width="0.8" opacity="0.4" />
+                    
+                    <!-- Laminated Core stack inside lower slot -->
+                    <rect x="320" y="315" width="220" height="35" fill="url(#indCoreGrad)" stroke="#1e293b" />
+                    <path d="M 330 315 L 330 350 M 340 315 L 340 350 M 350 315 L 350 350 M 360 315 L 360 350 M 370 315 L 370 350 M 380 315 L 380 350 M 390 315 L 390 350 M 400 315 L 400 350 M 410 315 L 410 350 M 420 315 L 420 350 M 430 315 L 430 350 M 440 315 L 440 350 M 450 315 L 450 350 M 460 315 L 460 350 M 470 315 L 470 350 M 480 315 L 480 350 M 490 315 L 490 350 M 500 315 L 500 350 M 510 315 L 510 350 M 520 315 L 520 350 M 530 315 L 530 350" stroke="#0f172a" stroke-width="0.8" opacity="0.4" />
+                </g>
+
+                <!-- Salient Pole Rotor Core & Projecting Electromagnets (visible inside cutout window) -->
+                <g class="motor-svg-part" id="ind-rotor-poles" data-part="rotor-poles" style="cursor: pointer;">
+                    <!-- Rotor steel hub cylinder -->
+                    <rect x="325" y="215" width="210" height="60" fill="url(#indShaftGrad)" stroke="#334155" />
+                    
+                    <!-- Individual Salient Poles wrapped around the cylinder -->
+                    <!-- Pole 1 (Top Edge) -->
+                    <rect x="330" y="175" width="200" height="15" rx="3" fill="url(#indGoldGrad)" stroke="#78350f" />
+                    <rect x="340" y="190" width="180" height="8" fill="url(#indCopperGrad)" stroke="#7c2d12" />
+                    
+                    <!-- Pole 2 (Upper Middle) -->
+                    <rect x="330" y="202" width="200" height="18" rx="4" fill="url(#indGoldGrad)" stroke="#78350f" />
+                    <rect x="340" y="220" width="180" height="8" fill="url(#indCopperGrad)" stroke="#7c2d12" />
+                    
+                    <!-- Pole 3 (Center) -->
+                    <rect x="330" y="232" width="200" height="24" rx="4" fill="url(#indGoldGrad)" stroke="#78350f" />
+                    <line x1="330" y1="244" x2="530" y2="244" stroke="#fef08a" stroke-width="1.5" opacity="0.5" />
+                    
+                    <!-- Pole 4 (Lower Middle) -->
+                    <rect x="340" y="260" width="180" height="8" fill="url(#indCopperGrad)" stroke="#7c2d12" />
+                    <rect x="330" y="268" width="200" height="18" rx="4" fill="url(#indGoldGrad)" stroke="#78350f" />
+                    
+                    <!-- Pole 5 (Bottom Edge) -->
+                    <rect x="340" y="288" width="180" height="8" fill="url(#indCopperGrad)" stroke="#7c2d12" />
+                    <rect x="330" y="298" width="200" height="15" rx="3" fill="url(#indGoldGrad)" stroke="#78350f" />
+                </g>
+
+                <!-- Stator End Windings (Left Winding Basket) -->
+                <g class="motor-svg-part" id="ind-windings-left" data-part="stator-windings" style="cursor: pointer;">
+                    <path d="M 320 145 C 290 145, 290 345, 320 345" fill="none" stroke="url(#indCopperGrad)" stroke-width="15" stroke-linecap="round" />
+                    <path d="M 320 155 C 300 155, 300 335, 320 335" fill="none" stroke="url(#indCopperGrad)" stroke-width="10" opacity="0.85" />
+                    <path d="M 320 165 C 310 165, 310 325, 320 325" fill="none" stroke="url(#indCopperGrad)" stroke-width="5" opacity="0.7" />
+                </g>
+
+                <!-- Stator End Windings (Right Winding Basket) -->
+                <g class="motor-svg-part" id="ind-windings-right" data-part="stator-windings" style="cursor: pointer;">
+                    <path d="M 540 145 C 570 145, 570 345, 540 345" fill="none" stroke="url(#indCopperGrad)" stroke-width="15" stroke-linecap="round" />
+                    <path d="M 540 155 C 560 155, 560 335, 540 335" fill="none" stroke="url(#indCopperGrad)" stroke-width="10" opacity="0.85" />
+                    <path d="M 540 165 C 550 165, 550 325, 540 325" fill="none" stroke="url(#indCopperGrad)" stroke-width="5" opacity="0.7" />
+                </g>
+
+                <!-- Stator Frame & Housing (Cast Iron blue casing with cooling fins & cutaway window) -->
+                <g class="motor-svg-part" id="ind-frame" data-part="frame" style="cursor: pointer;">
+                    <!-- Left Base Mounting Feet -->
+                    <path d="M 230 360 L 310 360 L 320 405 L 220 405 Z" fill="url(#indFrameGrad)" stroke="#0f172a" />
+                    <circle cx="250" cy="385" r="5" fill="#0f172a" />
+                    <circle cx="290" cy="385" r="5" fill="#0f172a" />
+                    
+                    <!-- Right Base Mounting Feet -->
+                    <path d="M 550 360 L 630 360 L 640 405 L 540 405 Z" fill="url(#indFrameGrad)" stroke="#0f172a" />
+                    <circle cx="570" cy="385" r="5" fill="#0f172a" />
+                    <circle cx="610" cy="385" r="5" fill="#0f172a" />
+                    
+                    <!-- Ground support pad -->
+                    <rect x="200" y="405" width="460" height="10" fill="url(#indBaseGrad)" rx="2" />
+
+                    <!-- Main Outer Blue Casing (using compound path to create the cutaway window) -->
+                    <path d="M 260 120 L 600 120 L 600 360 L 260 360 Z 
+                             M 320 140 L 320 340 L 540 340 L 540 140 Z" 
+                          fill="url(#indFrameGrad)" stroke="#0f172a" fill-rule="evenodd" filter="url(#indShadow)" />
+
+                    <!-- Vertical cooling fins on left side of frame -->
+                    <rect x="272" y="115" width="8" height="250" rx="3" fill="url(#indFinGrad)" stroke="#0f172a" stroke-width="0.5" />
+                    <rect x="292" y="115" width="8" height="250" rx="3" fill="url(#indFinGrad)" stroke="#0f172a" stroke-width="0.5" />
+                    
+                    <!-- Vertical cooling fins on right side of frame -->
+                    <rect x="552" y="115" width="8" height="250" rx="3" fill="url(#indFinGrad)" stroke="#0f172a" stroke-width="0.5" />
+                    <rect x="572" y="115" width="8" height="250" rx="3" fill="url(#indFinGrad)" stroke="#0f172a" stroke-width="0.5" />
+                    
+                    <!-- Lifting eye hook on top of frame casing -->
+                    <path d="M 415 120 C 415 85, 445 85, 445 120 Z" fill="none" stroke="url(#indFrameGrad)" stroke-width="12" stroke-linecap="round" />
+                    <circle cx="430" cy="105" r="6" fill="#020617" />
+                    
+                    <!-- Red steel-thickness highlight rim along the cutaway window border -->
+                    <path d="M 320 140 L 540 140 L 540 340 L 320 340 Z" fill="none" stroke="#ef4444" stroke-width="3.5" />
+                </g>
+
+                <!-- Left End Shield & Bearing Hub -->
+                <g class="motor-svg-part" id="ind-bearing-left" data-part="bearings" style="cursor: pointer;">
+                    <!-- End shield cover disk -->
+                    <path d="M 260 120 C 235 130, 235 350, 260 360 Z" fill="url(#indFrameGrad)" stroke="#0f172a" />
+                    <!-- Radial ventilation slots -->
+                    <path d="M 248 160 Q 238 190, 248 220" fill="none" stroke="#0f172a" stroke-width="5" stroke-linecap="round" />
+                    <path d="M 248 260 Q 238 290, 248 320" fill="none" stroke="#0f172a" stroke-width="5" stroke-linecap="round" />
+                    <!-- Bearing hub cap -->
+                    <circle cx="260" cy="245" r="28" fill="url(#indShaftGrad)" stroke="#0f172a" />
+                    <circle cx="260" cy="245" r="14" fill="#0f172a" />
+                    <rect x="257" y="210" width="6" height="7" fill="#64748b" />
+                </g>
+
+                <!-- Cooling Fan (placed on left shaft extension) -->
+                <g class="motor-svg-part" id="ind-fan" data-part="cooling-fan" style="cursor: pointer;">
+                    <!-- Fan Backplate -->
+                    <ellipse cx="205" cy="245" rx="8" ry="70" fill="#1e293b" stroke="#0f172a" />
+                    <!-- 3D Fan blades -->
+                    <path d="M 205 178 L 190 182 L 195 205 L 205 201 Z" fill="#475569" stroke="#1e293b" />
+                    <path d="M 205 201 L 190 205 L 195 228 L 205 224 Z" fill="#475569" stroke="#1e293b" />
+                    <path d="M 205 266 L 190 262 L 195 239 L 205 243 Z" fill="#475569" stroke="#1e293b" />
+                    <path d="M 205 289 L 190 285 L 195 262 L 205 266 Z" fill="#475569" stroke="#1e293b" />
+                    <path d="M 205 312 L 190 308 L 195 285 L 205 289 Z" fill="#475569" stroke="#1e293b" />
+                </g>
+
+                <!-- Right End Shield & Bearings -->
+                <g class="motor-svg-part" id="ind-bearing-right" data-part="bearings" style="cursor: pointer;">
+                    <!-- Right end cover disk -->
+                    <path d="M 600 120 C 625 130, 625 350, 600 360 Z" fill="url(#indFrameGrad)" stroke="#0f172a" />
+                    <!-- Bearing hub cap -->
+                    <circle cx="600" cy="245" r="28" fill="url(#indShaftGrad)" stroke="#0f172a" />
+                    <circle cx="600" cy="245" r="14" fill="#0f172a" />
+                </g>
+
+                <!-- High-Voltage Terminal Box -->
+                <g class="motor-svg-part" id="ind-terminal-box" data-part="terminal-box" style="cursor: pointer;">
+                    <!-- 3D perspective box on top of the frame -->
+                    <!-- Top Face -->
+                    <polygon points="380,45 460,45 480,60 400,60" fill="url(#indFrameGrad)" stroke="#0f172a" />
+                    <!-- Left Face -->
+                    <polygon points="380,45 400,60 400,80 380,65" fill="#1e3a8a" stroke="#0f172a" />
+                    <!-- Front Face -->
+                    <polygon points="400,60 480,60 480,80 400,80" fill="#0369a1" stroke="#0f172a" />
+                    <!-- Warning High Voltage Flash Bolt -->
+                    <path d="M 436,65 L 444,65 L 439,71 L 445,71 L 438,77" fill="#eab308" stroke="#78350f" stroke-width="0.5" />
+                </g>
+
+                <!-- Slip Rings & Brushes (placed on right shaft extension) -->
+                <g class="motor-svg-part" id="ind-slip-rings" data-part="slip-rings" style="cursor: pointer;">
+                    <!-- Dual Phosphor Bronze slip rings -->
+                    <rect x="642" y="222" width="14" height="46" rx="2" fill="url(#indBronzeGrad)" stroke="#0f172a" />
+                    <rect x="664" y="222" width="14" height="46" rx="2" fill="url(#indBronzeGrad)" stroke="#0f172a" />
+                    <!-- Carbon Brushes resting on rings -->
+                    <rect x="646" y="208" width="6" height="14" fill="#0f172a" rx="0.5" />
+                    <rect x="668" y="208" width="6" height="14" fill="#0f172a" rx="0.5" />
+                    <!-- Brush holders and wires -->
+                    <path d="M 649 208 L 649 198 L 638 198" fill="none" stroke="#ef4444" stroke-width="1" />
+                    <path d="M 671 208 L 671 198 L 682 198" fill="none" stroke="#3b82f6" stroke-width="1" />
+                </g>
+            </svg>
+            
+            <!-- Sliding Diagnostic HUD Sidebar -->
+            <div class="industrial-hud-sidebar" id="industrialFloatingCard" style="position: absolute; right: 0; top: 0; bottom: 0; width: 330px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(18px) saturate(1.7); -webkit-backdrop-filter: blur(18px) saturate(1.7); border-left: 1px solid rgba(59, 130, 246, 0.25); padding: 25px; display: flex; flex-direction: column; justify-content: flex-start; gap: 15px; box-shadow: -8px 0 32px rgba(0,0,0,0.6); z-index: 20; transform: translateX(105%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); pointer-events: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="hud-badge" id="indPartCode">[SYS.TELEMETRY]</span>
+                    <button class="close-sidebar-btn" id="closeIndSidebar" style="background: none; border: none; color: var(--danger); font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition);"><i class="fa-solid fa-square-xmark"></i></button>
+                </div>
+                
+                <h3 class="hud-part-title" id="indPartTitle" style="font-size: 1.25rem; color: #fff; margin-bottom: 0px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Orbitron', sans-serif;">Industrial Component</h3>
+                <span class="hud-status-led" style="font-size: 0.68rem; display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-family: 'Orbitron', monospace;"><span class="led-dot" style="width: 6px; height: 6px; background-color: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent);"></span> <span id="indPartMaterial">MATERIAL SPEC</span></span>
+                
+                <div class="hud-divider" style="height: 1px; background: linear-gradient(90deg, var(--accent) 0%, rgba(16, 185, 129, 0.2) 60%, transparent 100%); width: 100%;"></div>
+                
+                <div class="hud-detail-group">
+                    <div class="hud-label" style="font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 4px;">REAL-WORLD INDUSTRIAL USE:</div>
+                    <p class="hud-value-highlight" id="indPartUse" style="font-size: 0.88rem; color: #00f0ff; font-weight: 600; line-height: 1.4;">Detailed application specs go here...</p>
+                </div>
+                
+                <div class="hud-detail-group" style="margin-top: 10px;">
+                    <div class="hud-label" style="font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 4px;">OPERATIONAL ANALYSIS:</div>
+                    <p class="hud-value-text" id="indPartDescription" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; text-align: justify; font-family: 'Inter', sans-serif;">Deep-dive textbook explanation of operations and structural engineering stress limits.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ═══════════════════════════════════════════════════
+    //  SYNCHRONOUS MOTOR PART INSPECTOR ENGINE
+    // ═══════════════════════════════════════════════════
+    (function() {
+        // Tab Switcher Controller
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.getAttribute('data-tab');
+                
+                // Toggle active buttons
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Toggle active content panels
+                tabContents.forEach(content => {
+                    if (content.id === `tab-${targetTab}`) {
+                        content.classList.add('active');
+                        content.style.display = ''; // Clear inline style override
+                    } else {
+                        content.classList.remove('active');
+                        content.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // ─── Tab 1: Schematic Inspector Logic ───
+        const motorEncyclopedia = {
+            'frame': {
+                title: 'Stator Frame / Yoke',
+                systemCode: '[PART.ST_FRAME]',
+                material: 'CAST IRON OR WELDED STEEL',
+                function: 'Provides structural shell, supports the laminated stator core, and houses mounting feet.',
+                description: 'The stator frame forms the outer casing of the motor. It provides structural support to the heavy laminated stator core and protects the internal rotor and winding assemblies from physical hazards. In smaller machines, it is typically cast iron, whereas larger industrial motors utilize high-strength welded steel plates designed with internal cooling channels.',
+                formula: '\\[\\Phi_{total} = \\Phi_{yoke} \\times 2\\]',
+                formulaLabel: 'Yoke Flux Split Relationship',
+                animationType: 'grid'
+            },
+            'stator-core': {
+                title: 'Stator Core & Windings',
+                systemCode: '[PART.ST_WINDINGS]',
+                material: 'LAMINATED SILICON STEEL & COPPER',
+                function: 'Generates the Rotating Magnetic Field (RMF) when supplied with three-phase AC power.',
+                description: 'The stator core is built from thin, insulated laminations of silicon steel to minimize eddy current losses. The inner slots house three-phase AC windings arranged 120° electrical degrees apart. When energized, they produce a continuous magnetic field rotating at synchronous speed (Ns).',
+                formula: '\\[N_s = \\frac{120 \\cdot f}{P} \\text{ RPM}\\]',
+                formulaLabel: 'Synchronous Speed Calculation',
+                animationType: 'rmf'
+            },
+            'rotor-core': {
+                title: 'Salient Pole Rotor Core',
+                systemCode: '[PART.ROT_CORE]',
+                material: 'LAMINATED STEEL & SHAFT HUB',
+                function: 'Houses the field windings and damper bars; rotates in lockstep with the stator RMF.',
+                description: 'Salient pole rotors feature projecting magnet poles constructed from steel laminations to limit core heating. Under operation, these poles establish stationary N/S magnet fields that magnetically lock with the rotating stator field, forcing the rotor to turn at exactly Ns.',
+                formula: '\\[f = \\frac{P \\cdot N_s}{120} \\text{ Hz}\\]',
+                formulaLabel: 'Induced Winding Frequency',
+                animationType: 'rotor'
+            },
+            'field-coils': {
+                title: 'Field Coils (Excitation)',
+                systemCode: '[PART.FIELD_COILS]',
+                material: 'HEAVY INSULATED COPPER COILS',
+                function: 'Carries DC current to excite the rotor poles and create the electromagnet.',
+                description: 'Field coils are wrapped around the core of each salient pole. Supplying these coils with DC excitation current creates alternating North and South electromagnets on the rotor. Changing the excitation current allows control over the motor\'s power factor (leading, lagging, or unity).',
+                formula: '\\[I_f = \\frac{V_{dc}}{R_{field}} \\text{ A}\\]',
+                formulaLabel: 'Ohm\'s Law for Field Excitation',
+                animationType: 'dc'
+            },
+            'damper-windings': {
+                title: 'Damper Windings (Amortisseur)',
+                systemCode: '[PART.DAMPER_BARS]',
+                material: 'COPPER BARS WITH SHORTING RINGS',
+                function: 'Provides starting torque asynchronously and dampens rotor speed oscillations (hunting).',
+                description: 'Synchronous motors have no starting torque because the stator field rotates too quickly for the heavy rotor to catch up. Damper windings are copper bars embedded in the pole shoes, short-circuited like a cage rotor. At startup, currents are induced in them to start the motor as an induction motor. Near synchronous speed, DC excitation is applied, and the rotor locks. They also damp speed oscillations (hunting) under load fluctuations.',
+                formula: '\\[T_{start} \\propto I_{induced}^2 \\cdot R_{damper}\\]',
+                formulaLabel: 'Starting Torque Relation',
+                animationType: 'damping'
+            },
+            'shaft': {
+                title: 'Rotor Shaft',
+                systemCode: '[PART.ROT_SHAFT]',
+                material: 'HIGH-TENSILE CARBON STEEL',
+                function: 'Transmits mechanical torque from the electromagnetic locking to the output load.',
+                description: 'The shaft is the central rotating rod upon which the rotor assembly is tightly pressed. It receives the mechanical rotational force (torque) developed by the magnetic lock between stator and rotor and transmits it to the external machinery or load.',
+                formula: '\\[P_{mech} = T \\cdot \\omega = T \\cdot \\frac{2\\pi N_s}{60} \\text{ W}\\]',
+                formulaLabel: 'Mechanical Shaft Power Output',
+                animationType: 'shaft'
+            },
+            'slip-rings': {
+                title: 'Slip Rings & Brushes',
+                systemCode: '[PART.SLIP_RINGS]',
+                material: 'BRONZE RINGS & CARBON BRUSHES',
+                function: 'Transfers external DC excitation power into the rotating rotor windings.',
+                description: 'Slip rings are metallic rings keyed to the shaft but insulated from it. Stationary carbon brushes ride on their surfaces under spring pressure, allowing DC current to flow from the external supply into the rotating field winding on the rotor.',
+                formula: '\\[P_{excitation} = V_{dc} \\cdot I_{f} \\text{ W}\\]',
+                formulaLabel: 'Excitation Power consumption',
+                animationType: 'contacts'
+            }
+        };
+
+        const listItems = document.querySelectorAll('.part-item');
+        const svgParts = document.querySelectorAll('#synchronousMotorSvg .motor-svg-part');
+        const hudPartCode = document.getElementById('hudPartCode');
+        const hudPartMaterial = document.getElementById('hudPartMaterial');
+        const hudPartTitle = document.getElementById('hudPartTitle');
+        const hudPartFunction = document.getElementById('hudPartFunction');
+        const hudPartDescription = document.getElementById('hudPartDescription');
+        const hudFormulaLabel = document.getElementById('hudFormulaLabel');
+        const hudFormulaDisplay = document.getElementById('hudFormulaDisplay');
+        const scopeCanvas = document.getElementById('partScopeCanvas');
+        const scopeCtx = scopeCanvas ? scopeCanvas.getContext('2d') : null;
+        
+        // Zoom Navigation Elements
+        const svgElement = document.getElementById('synchronousMotorSvg');
+        const resetBtn = document.getElementById('resetZoom');
+        
+        // Visual Mode Toggle Elements
+        const btnNormal = document.getElementById('mode-normal');
+        const btnXray = document.getElementById('mode-xray');
+        const btnExploded = document.getElementById('mode-exploded');
+
+        let currentAnimationType = 'rmf';
+        let animationPhase = 0;
+
+        // Coordinates mapping for zoom targets
+        const zoomCoords = {
+            'stator-core': { x: 100, y: 10, w: 120, h: 120 },
+            'frame': { x: 20, y: 10, w: 120, h: 120 },
+            'rotor-core': { x: 100, y: 50, w: 120, h: 120 },
+            'field-coils': { x: 120, y: 50, w: 100, h: 100 },
+            'damper-windings': { x: 115, y: 45, w: 90, h: 90 },
+            'shaft': { x: 120, y: 120, w: 80, h: 80 },
+            'slip-rings': { x: 205, y: 205, w: 105, h: 105 }
+        };
+
+        let currentViewBox = { x: 0, y: 0, w: 320, h: 320 };
+        let targetViewBox = { x: 0, y: 0, w: 320, h: 320 };
+        let animStartTime = 0;
+        const animDuration = 600; // ms
+
+        function animateViewBox(timestamp) {
+            if (!animStartTime) animStartTime = timestamp;
+            const progress = Math.min((timestamp - animStartTime) / animDuration, 1);
+            const ease = progress * (2 - progress); // easeOutQuad
+            
+            const x = currentViewBox.x + (targetViewBox.x - currentViewBox.x) * ease;
+            const y = currentViewBox.y + (targetViewBox.y - currentViewBox.y) * ease;
+            const w = currentViewBox.w + (targetViewBox.w - currentViewBox.w) * ease;
+            const h = currentViewBox.h + (targetViewBox.h - currentViewBox.h) * ease;
+            
+            svgElement.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animateViewBox);
+            } else {
+                currentViewBox = { ...targetViewBox };
+            }
+        }
+        
+        function zoomTo(x, y, w, h) {
+            targetViewBox = { x, y, w, h };
+            animStartTime = 0;
+            requestAnimationFrame(animateViewBox);
+            
+            if (x === 0 && y === 0 && w === 320 && h === 320) {
+                resetBtn.style.display = 'none';
+                svgElement.removeAttribute('data-zoomed-part');
+            } else {
+                resetBtn.style.display = 'block';
+            }
+        }
+        
+        function selectPart(partId) {
+            const data = motorEncyclopedia[partId];
+            if (!data) return;
+            
+            currentAnimationType = data.animationType;
+            
+            // Zoom to coordinates
+            const coords = zoomCoords[partId];
+            if (coords) {
+                zoomTo(coords.x, coords.y, coords.w, coords.h);
+                svgElement.setAttribute('data-zoomed-part', partId);
+            }
+            
+            // Update Text Contents
+            if (hudPartCode) hudPartCode.textContent = data.systemCode;
+            if (hudPartMaterial) hudPartMaterial.textContent = data.material;
+            if (hudPartTitle) hudPartTitle.textContent = data.title;
+            if (hudPartFunction) hudPartFunction.textContent = data.function;
+            if (hudPartDescription) hudPartDescription.textContent = data.description;
+            if (hudFormulaLabel) hudFormulaLabel.textContent = data.formulaLabel;
+            if (hudFormulaDisplay) {
+                hudFormulaDisplay.textContent = data.formula;
+                // Ask MathJax to re-typeset formulas
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([hudFormulaDisplay]).catch((err) => console.log(err));
+                }
+            }
+            
+            // Highlight list item
+            listItems.forEach(item => {
+                if (item.getAttribute('data-part') === partId) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+            
+            // Highlight SVG part
+            svgParts.forEach(svgEl => {
+                if (svgEl.getAttribute('data-part') === partId) {
+                    svgEl.classList.add('svg-highlighted');
+                } else {
+                    svgEl.classList.remove('svg-highlighted');
+                }
+            });
+        }
+        
+        // Add click events to list selector
+        listItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const partId = item.getAttribute('data-part');
+                selectPart(partId);
+            });
+        });
+        
+        // Add click events to SVG parts
+        svgParts.forEach(svgEl => {
+            svgEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const partId = svgEl.getAttribute('data-part');
+                selectPart(partId);
+            });
+        });
+        
+        // Reset Zoom Event
+        resetBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            zoomTo(0, 0, 320, 320);
+            svgParts.forEach(svgEl => svgEl.classList.remove('svg-highlighted'));
+            listItems.forEach(item => item.classList.remove('active'));
+        });
+
+        // Click SVG background to zoom out
+        svgElement.addEventListener('click', (e) => {
+            if (!e.target.closest('.motor-svg-part')) {
+                zoomTo(0, 0, 320, 320);
+                svgParts.forEach(svgEl => svgEl.classList.remove('svg-highlighted'));
+                listItems.forEach(item => item.classList.remove('active'));
+            }
+        });
+
+        // Visual Mode Toggle Handler
+        function setMode(mode) {
+            btnNormal.classList.remove('active');
+            btnXray.classList.remove('active');
+            btnExploded.classList.remove('active');
+            
+            svgElement.classList.remove('xray-active', 'exploded-active');
+            
+            if (mode === 'normal') {
+                btnNormal.classList.add('active');
+            } else if (mode === 'xray') {
+                btnXray.classList.add('active');
+                svgElement.classList.add('xray-active');
+            } else if (mode === 'exploded') {
+                btnExploded.classList.add('active');
+                svgElement.classList.add('exploded-active');
+            }
+        }
+
+        btnNormal.addEventListener('click', () => setMode('normal'));
+        btnXray.addEventListener('click', () => setMode('xray'));
+        btnExploded.addEventListener('click', () => setMode('exploded'));
+        
+        // Initialize default selection
+        selectPart('stator-core');
+        
+        // Telemetry Oscilloscope Draw Loop
+        function drawOscilloscope(timestamp) {
+            if (!scopeCanvas || !scopeCtx) return;
+            
+            scopeCtx.clearRect(0, 0, scopeCanvas.width, scopeCanvas.height);
+            
+            // Draw grid lines
+            scopeCtx.strokeStyle = 'rgba(255,255,255,0.02)';
+            scopeCtx.lineWidth = 1;
+            scopeCtx.beginPath();
+            for (let x = 0; x < scopeCanvas.width; x += 15) {
+                scopeCtx.moveTo(x, 0);
+                scopeCtx.lineTo(x, scopeCanvas.height);
+            }
+            for (let y = 0; y < scopeCanvas.height; y += 15) {
+                scopeCtx.moveTo(0, y);
+                scopeCtx.lineTo(scopeCanvas.width, y);
+            }
+            scopeCtx.stroke();
+            
+            // Center horizontal reference line
+            scopeCtx.strokeStyle = 'rgba(59, 130, 246, 0.1)';
+            scopeCtx.beginPath();
+            scopeCtx.moveTo(0, scopeCanvas.height / 2);
+            scopeCtx.lineTo(scopeCanvas.width, scopeCanvas.height / 2);
+            scopeCtx.stroke();
+            
+            // Draw waveforms
+            scopeCtx.lineWidth = 2;
+            scopeCtx.shadowBlur = 4;
+            
+            animationPhase += 0.05;
+            
+            if (currentAnimationType === 'rmf') {
+                // 3-Phase AC voltage waves
+                const colors = ['rgba(239, 68, 68, 0.8)', 'rgba(234, 179, 8, 0.8)', 'rgba(59, 130, 246, 0.8)'];
+                const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3];
+                
+                phases.forEach((p, index) => {
+                    scopeCtx.strokeStyle = colors[index];
+                    scopeCtx.shadowColor = colors[index];
+                    scopeCtx.beginPath();
+                    for (let x = 0; x < scopeCanvas.width; x++) {
+                        const y = scopeCanvas.height / 2 + Math.sin(x * 0.04 - animationPhase + p) * 16;
+                        if (x === 0) scopeCtx.moveTo(x, y);
+                        else scopeCtx.lineTo(x, y);
+                    }
+                    scopeCtx.stroke();
+                });
+            } else if (currentAnimationType === 'dc') {
+                // Flat line with high frequency ripple
+                scopeCtx.strokeStyle = 'rgba(139, 92, 246, 0.85)';
+                scopeCtx.shadowColor = 'rgba(139, 92, 246, 0.6)';
+                scopeCtx.beginPath();
+                for (let x = 0; x < scopeCanvas.width; x++) {
+                    const y = (scopeCanvas.height / 2 - 8) + Math.sin(x * 0.5 + animationPhase * 2) * 1.5;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            } else if (currentAnimationType === 'damping') {
+                // Damping exponential decay oscillation
+                scopeCtx.strokeStyle = 'rgba(249, 115, 22, 0.85)';
+                scopeCtx.shadowColor = 'rgba(249, 115, 22, 0.6)';
+                scopeCtx.beginPath();
+                
+                for (let x = 0; x < scopeCanvas.width; x++) {
+                    const decay = Math.exp(-x * 0.01);
+                    const y = scopeCanvas.height / 2 + Math.sin(x * 0.15 - animationPhase * 3) * 22 * decay;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            } else if (currentAnimationType === 'shaft') {
+                // Square speed encoder pulses
+                scopeCtx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+                scopeCtx.shadowColor = 'rgba(0, 240, 255, 0.6)';
+                scopeCtx.beginPath();
+                for (let x = 0; x < scopeCanvas.width; x++) {
+                    const term = Math.sin(x * 0.06 - animationPhase * 2);
+                    const y = scopeCanvas.height / 2 + (term >= 0 ? 15 : -15);
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            } else if (currentAnimationType === 'contacts') {
+                // DC brush excitation ripple spikes
+                scopeCtx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
+                scopeCtx.shadowColor = 'rgba(16, 185, 129, 0.6)';
+                scopeCtx.beginPath();
+                for (let x = 0; x < scopeCanvas.width; x++) {
+                    const noise = Math.sin(x * 0.3 + animationPhase * 1.5) * 2 + Math.cos(x * 0.9 - animationPhase * 3) * 1;
+                    const y = (scopeCanvas.height / 2 - 5) + noise;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            } else if (currentAnimationType === 'rotor') {
+                // Pulsating magnetic flux poles
+                scopeCtx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+                scopeCtx.shadowColor = 'rgba(239, 68, 68, 0.5)';
+                scopeCtx.beginPath();
+                for (let x = 0; x < scopeCanvas.width; x++) {
+                    const y = scopeCanvas.height / 2 + Math.abs(Math.sin(x * 0.05 - animationPhase * 0.5)) * 20 - 10;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            } else {
+                // Grid/noise
+                scopeCtx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+                scopeCtx.shadowColor = 'rgba(59, 130, 246, 0.4)';
+                scopeCtx.beginPath();
+                for (let x = 0; x < scopeCanvas.width; x++) {
+                    const y = scopeCanvas.height / 2 + (Math.random() - 0.5) * 4;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            }
+            
+            scopeCtx.shadowBlur = 0; // reset
+            requestAnimationFrame(drawOscilloscope);
+        }
+        
+        requestAnimationFrame(drawOscilloscope);
+        
+        // Subtle slip rings rotation simulation inside SVG
+        let slipRingPhase = 0;
+        function animateSlipRings() {
+            const ring1 = document.getElementById('slipRing1');
+            const ring2 = document.getElementById('slipRing2');
+            if (ring1 && ring2) {
+                slipRingPhase = (slipRingPhase + 1) % 360;
+                ring1.style.transform = `rotate(${slipRingPhase}deg)`;
+                ring1.style.transformOrigin = '258px 252px';
+                ring2.style.transform = `rotate(${-slipRingPhase}deg)`;
+                ring2.style.transformOrigin = '258px 252px';
+            }
+            requestAnimationFrame(animateSlipRings);
+        }
+        requestAnimationFrame(animateSlipRings);
+
+
+        // ─── Tab 2: Industrial Cutaway Inspector Logic ───
+        const industrialEncyclopedia = {
+            'shaft': {
+                title: 'Rotor Shaft',
+                code: '[SYS.SHAFT]',
+                material: 'FORGED HIGH-TENSILE CARBON STEEL',
+                use: 'Transmits electromagnetic rotational torque to the industrial output load.',
+                description: 'The central shaft of a synchronous motor is manufactured from high-tensile alloy steel. It is ground to precise tolerances to support the rotor core, salient pole electromagnets, and slip ring assemblies without mechanical deflection under heavy load torque.'
+            },
+            'cooling-fan': {
+                title: 'Internal Cooling Fan',
+                code: '[SYS.COOL_FAN]',
+                material: 'REINFORCED THERMOPLASTIC / ALUMINUM',
+                use: 'Provides forced air convection to cool the stator windings and core.',
+                description: 'A shaft-mounted radial flow fan draws cool air through ventilation vents in the end shields and forces it across the stator slot fins and winding end turns. This prevents thermal degradation of the copper coil winding insulation during continuous loading.'
+            },
+            'bearings': {
+                title: 'Bearings Assembly',
+                code: '[SYS.BRG_HOUSING]',
+                material: 'CHROME STEEL BALLS / BRONZE SLEEVE',
+                use: 'Supports the rotating assembly and minimizes friction losses.',
+                description: 'Anti-friction ball or cylindrical roller bearings are installed in grease-lubricated housings on both drive and non-drive ends. Larger industrial machines utilize hydrodynamic sleeve bearings with constant oil ring lubrication to sustain higher radial loads.'
+            },
+            'stator-windings': {
+                title: 'Stator End Windings',
+                code: '[SYS.ST_WINDINGS]',
+                material: 'HEAVY-GAUGE INSULATED COPPER',
+                use: 'Establishes the circulating current paths that produce the rotating field.',
+                description: 'The end windings form the loop connections of the 3-phase stator coils outside the lamination slots. They are tightly lashed, vacuum-pressure impregnated with varnish, and mechanically braced to withstand the severe electromagnetic forces experienced during motor starting and transient loading.'
+            },
+            'frame': {
+                title: 'Industrial Frame Casing',
+                code: '[SYS.FRAME_YOKE]',
+                material: 'CAST IRON OR STIFFENED WELDED STEEL',
+                use: 'Protects internal parts and provides cooling fins to dissipate heat.',
+                description: 'The outer yoke frame supports the stator core plate stack. The external surface features cast-in cooling ribs (fins) that maximize the surface area for convective heat dissipation from the stator core, preventing hotspot generation.'
+            },
+            'stator-core': {
+                title: 'Laminated Stator Core',
+                code: '[SYS.ST_CORE]',
+                material: 'INSULATED SILICON STEEL SHEET STACK',
+                use: 'Provides a low-reluctance magnetic path for stator flux.',
+                description: 'Composed of high-permeability silicon steel sheets stacked together and clamped under pressure. Each sheet is insulated with varnish to prevent circular eddy current loops, substantially reducing hysteresis and eddy current iron losses in the stator.'
+            },
+            'rotor-poles': {
+                title: 'Salient Poles & Field Coils',
+                code: '[SYS.ROT_POLE]',
+                material: 'STEEL LAMINATIONS & SHUNT COPPER COILS',
+                use: 'Forms the rotating DC electromagnets that lock with the stator field.',
+                description: 'Salient (projecting) poles are bolted or keyed to the rotor spider hub. High-conductivity insulated copper field windings wrap around the pole core. When supplied with direct current (DC) via slip rings, these coils convert the poles into alternating N-S electromagnets.'
+            },
+            'terminal-box': {
+                title: 'High Voltage Terminal Box',
+                code: '[SYS.TERM_BOX]',
+                material: 'HEAVY GAUGE SHEET STEEL WITH GASKETS',
+                use: 'Houses the 3-phase AC input terminals and DC excitation inputs.',
+                description: 'A gasketed, explosion-proof terminal box located on the frame casing. It isolates the high-voltage mains supply wire connections and provides surge protection and grounding terminals for safety compliance in industrial environments.'
+            },
+            'slip-rings': {
+                title: 'Slip Rings & Carbon Brushes',
+                code: '[SYS.SLIP_RINGS]',
+                material: 'PHOSPHOR BRONZE RINGS & GRAPHITE BRUSHES',
+                use: 'Provides continuous DC current path to the rotating coils.',
+                description: 'Two concentric bronze rings are shrunk fit onto the shaft over an insulating sleeve. Carbon brushes rest on these rings under spring pressure. This allows external DC power from the exciter system to feed the rotating field poles, maintaining field strength.'
+            }
+        };
+
+        const indParts = document.querySelectorAll('#industrialMotorSvg .motor-svg-part');
+        const indFloatingCard = document.getElementById('industrialFloatingCard');
+        const industrialSvg = document.getElementById('industrialMotorSvg');
+        const indResetBtn = document.getElementById('indResetZoom');
+
+        const indZoomCoords = {
+            'shaft': { x: 220, y: 125, w: 360, h: 200 },
+            'cooling-fan': { x: 20, y: 115, w: 360, h: 200 },
+            'bearings': { x: 400, y: 125, w: 360, h: 200 },
+            'stator-windings': { x: 390, y: 115, w: 360, h: 200 },
+            'frame': { x: 200, y: 80, w: 400, h: 225 },
+            'stator-core': { x: 250, y: 47, w: 300, h: 169 },
+            'rotor-poles': { x: 250, y: 104, w: 300, h: 169 },
+            'terminal-box': { x: 300, y: 24, w: 200, h: 113 },
+            'slip-rings': { x: 535, y: 163, w: 200, h: 113 }
+        };
+
+        let currentIndViewBox = { x: 0, y: 0, w: 800, h: 450 };
+        let targetIndViewBox = { x: 0, y: 0, w: 800, h: 450 };
+        let indAnimStartTime = 0;
+        const indAnimDuration = 650; // ms
+
+        function animateIndViewBox(timestamp) {
+            if (!indAnimStartTime) indAnimStartTime = timestamp;
+            const progress = Math.min((timestamp - indAnimStartTime) / indAnimDuration, 1);
+            const ease = progress * (2 - progress); // easeOutQuad
+            
+            const x = currentIndViewBox.x + (targetIndViewBox.x - currentIndViewBox.x) * ease;
+            const y = currentIndViewBox.y + (targetIndViewBox.y - currentIndViewBox.y) * ease;
+            const w = currentIndViewBox.w + (targetIndViewBox.w - currentIndViewBox.w) * ease;
+            const h = currentIndViewBox.h + (targetIndViewBox.h - currentIndViewBox.h) * ease;
+            
+            industrialSvg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animateIndViewBox);
+            } else {
+                currentIndViewBox = { ...targetIndViewBox };
+            }
+        }
+
+        function zoomIndTo(x, y, w, h) {
+            targetIndViewBox = { x, y, w, h };
+            indAnimStartTime = 0;
+            requestAnimationFrame(animateIndViewBox);
+            
+            if (x === 0 && y === 0 && w === 800 && h === 450) {
+                if (indResetBtn) indResetBtn.style.display = 'none';
+            } else {
+                if (indResetBtn) indResetBtn.style.display = 'block';
+            }
+        }
+
+        function selectIndPart(partId) {
+            const data = industrialEncyclopedia[partId];
+            if (!data) return;
+            
+            // Highlight part in SVG
+            indParts.forEach(partEl => {
+                if (partEl.getAttribute('data-part') === partId) {
+                    partEl.classList.add('svg-highlighted');
+                } else {
+                    partEl.classList.remove('svg-highlighted');
+                }
+            });
+            
+            // Update sidebar content
+            document.getElementById('indPartTitle').textContent = data.title;
+            document.getElementById('indPartCode').textContent = data.code;
+            document.getElementById('indPartMaterial').textContent = data.material;
+            document.getElementById('indPartUse').textContent = data.use;
+            document.getElementById('indPartDescription').textContent = data.description;
+            
+            // Open sidebar
+            indFloatingCard.classList.add('sidebar-open');
+            
+            // Zoom to part
+            const coords = indZoomCoords[partId];
+            if (coords) {
+                zoomIndTo(coords.x, coords.y, coords.w, coords.h);
+            }
+        }
+
+        function closeIndInspection() {
+            indFloatingCard.classList.remove('sidebar-open');
+            indParts.forEach(partEl => partEl.classList.remove('svg-highlighted'));
+            zoomIndTo(0, 0, 800, 450);
+        }
+
+        // Add click events to industrial parts in SVG
+        indParts.forEach(partEl => {
+            partEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const partId = partEl.getAttribute('data-part');
+                selectIndPart(partId);
+            });
+        });
+
+        // Click SVG background to zoom out
+        if (industrialSvg) {
+            industrialSvg.addEventListener('click', (e) => {
+                if (!e.target.closest('.motor-svg-part')) {
+                    closeIndInspection();
+                }
+            });
+        }
+
+        // Reset Zoom Button
+        if (indResetBtn) {
+            indResetBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeIndInspection();
+            });
+        }
+
+        // Close Sidebar Button
+        const closeIndSidebarBtn = document.getElementById('closeIndSidebar');
+        if (closeIndSidebarBtn) {
+            closeIndSidebarBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeIndInspection();
+            });
+        }
+
+        // Industrial View Mode Switcher
+        const indBtnNormal = document.getElementById('ind-mode-normal');
+        const indBtnXray = document.getElementById('ind-mode-xray');
+        
+        if (indBtnNormal && indBtnXray) {
+            indBtnNormal.addEventListener('click', () => {
+                indBtnNormal.classList.add('active');
+                indBtnXray.classList.remove('active');
+                industrialSvg.classList.remove('xray-active');
+            });
+            
+            indBtnXray.addEventListener('click', () => {
+                indBtnXray.classList.add('active');
+                indBtnNormal.classList.remove('active');
+                industrialSvg.classList.add('xray-active');
+            });
+        }
+
+        // ─── Viewport Maximizer / Fullscreen Toggling ───
+        const schemMaximizeBtn = document.getElementById('schematicMaximize');
+        const schemLayout = document.querySelector('#tab-schematic .motor-inspector-layout');
+        
+        if (schemMaximizeBtn && schemLayout) {
+            schemMaximizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isMaximized = schemLayout.classList.toggle('layout-maximized');
+                const icon = schemMaximizeBtn.querySelector('i');
+                if (isMaximized) {
+                    icon.className = 'fa-solid fa-compress';
+                    schemMaximizeBtn.setAttribute('title', 'Exit Fullscreen');
+                } else {
+                    icon.className = 'fa-solid fa-expand';
+                    schemMaximizeBtn.setAttribute('title', 'Toggle Fullscreen');
+                }
+                window.dispatchEvent(new Event('resize'));
+            });
+        }
+        
+        const indMaximizeBtn = document.getElementById('industrialMaximize');
+        const indViewport = document.querySelector('#tab-industrial .industrial-viewport');
+        
+        if (indMaximizeBtn && indViewport) {
+            indMaximizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isMaximized = indViewport.classList.toggle('layout-maximized');
+                const icon = indMaximizeBtn.querySelector('i');
+                if (isMaximized) {
+                    icon.className = 'fa-solid fa-compress';
+                    indMaximizeBtn.setAttribute('title', 'Exit Fullscreen');
+                } else {
+                    icon.className = 'fa-solid fa-expand';
+                    indMaximizeBtn.setAttribute('title', 'Toggle Fullscreen');
+                }
+                window.dispatchEvent(new Event('resize'));
+            });
+        }
+    })();
+</script>
+{% endblock %}

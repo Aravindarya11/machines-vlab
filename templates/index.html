@@ -1,0 +1,822 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | EMVL{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+/* ═══════════════════════════════════════════════════════
+   JARVIS-STYLE MACHINE CORE INTRO OVERLAY
+   ═══════════════════════════════════════════════════════ */
+html.intro-active, body.intro-active {
+    overflow: hidden !important;
+}
+#introOverlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 99999;
+    background: #020408;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+#introOverlay.fade-out {
+    opacity: 0;
+    transform: scale(1.08);
+    pointer-events: none;
+}
+
+/* ── Animated Circuit Grid Background ── */
+.intro-grid {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 3s ease-in-out infinite;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}
+.intro-grid.show { opacity: 1; }
+
+@keyframes gridPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+/* ── Central Machine Core (concentric circles) ── */
+.machine-core {
+    position: relative;
+    width: 320px; height: 320px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.core-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    opacity: 0;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.core-ring.show {
+    opacity: 1;
+}
+
+.core-ring-1 {
+    width: 300px; height: 300px;
+    border-color: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.05), inset 0 0 30px rgba(59, 130, 246, 0.03);
+}
+.core-ring-1.show {
+    animation: ringExpand 2s ease-out forwards, ringSpin 20s linear infinite;
+}
+
+.core-ring-2 {
+    width: 230px; height: 230px;
+    border-color: rgba(139, 92, 246, 0.2);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.08);
+}
+.core-ring-2.show {
+    animation: ringExpand 1.8s ease-out 0.2s forwards, ringSpin 15s linear infinite reverse;
+}
+
+.core-ring-3 {
+    width: 160px; height: 160px;
+    border-color: rgba(16, 185, 129, 0.25);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+.core-ring-3.show {
+    animation: ringExpand 1.6s ease-out 0.4s forwards, ringSpin 10s linear infinite;
+}
+
+.core-ring-4 {
+    width: 90px; height: 90px;
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+}
+.core-ring-4.show {
+    animation: ringExpand 1.4s ease-out 0.6s forwards, ringSpin 6s linear infinite reverse;
+}
+
+@keyframes ringExpand {
+    from { transform: scale(0.3); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+@keyframes ringSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Tick Marks on Rings (stator slots) ── */
+.core-ring-1::before, .core-ring-2::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    width: 2px; height: 12px;
+    background: rgba(59, 130, 246, 0.3);
+    transform-origin: bottom center;
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+}
+.core-ring-1::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    width: 2px; height: 12px;
+    background: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+/* ── Scanning sweep line ── */
+.scan-line {
+    position: absolute;
+    width: 150px; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.6), transparent);
+    top: 50%; left: 50%;
+    transform-origin: left center;
+    opacity: 0;
+}
+.scan-line.show {
+    opacity: 1;
+    animation: scanSweep 2s linear infinite;
+}
+
+@keyframes scanSweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── Core Center Power-Up Glow ── */
+.core-center {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.8), rgba(139, 92, 246, 0.4), transparent);
+    position: absolute;
+    opacity: 0;
+    transition: all 1s ease;
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+}
+.core-center.show {
+    opacity: 1;
+    box-shadow: 0 0 60px rgba(59, 130, 246, 0.4), 0 0 120px rgba(139, 92, 246, 0.2);
+    animation: centerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes centerPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(59,130,246,0.3), 0 0 80px rgba(139,92,246,0.15); }
+    50% { transform: scale(1.2); box-shadow: 0 0 60px rgba(59,130,246,0.5), 0 0 120px rgba(139,92,246,0.25); }
+}
+
+/* ── Phase Coil Glow Points ── */
+.phase-glow {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.phase-glow.show {
+    opacity: 1;
+    animation: phaseFlash 1.5s ease-in-out infinite;
+}
+.phase-a-glow { top: 10px; left: 50%; transform: translateX(-50%); background: #ef4444; box-shadow: 0 0 15px #ef4444; animation-delay: 0s !important; }
+.phase-b-glow { bottom: 40px; right: 25px; background: #eab308; box-shadow: 0 0 15px #eab308; animation-delay: 0.5s !important; }
+.phase-c-glow { bottom: 40px; left: 25px; background: #3b82f6; box-shadow: 0 0 15px #3b82f6; animation-delay: 1s !important; }
+
+@keyframes phaseFlash {
+    0%, 100% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.3); }
+}
+
+/* ── Magnetic Field Lines ── */
+.flux-line {
+    position: absolute;
+    border: 1.5px dashed transparent;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+.flux-line.show {
+    opacity: 0.3;
+    animation: fluxBreathe 3s ease-in-out infinite;
+}
+.flux-line-1 { width: 200px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(0deg); border-color: rgba(239,68,68,0.2); }
+.flux-line-2 { width: 200px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(60deg); border-color: rgba(234,179,8,0.2); }
+.flux-line-3 { width: 200px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(120deg); border-color: rgba(59,130,246,0.2); }
+
+@keyframes fluxBreathe {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.5; }
+}
+
+/* ── Boot-up Text Terminal ── */
+.boot-text {
+    font-family: 'Orbitron', 'Courier New', monospace;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.boot-line {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+}
+.boot-line.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.boot-line.sys-text {
+    font-size: 0.7rem;
+    color: rgba(16, 185, 129, 0.7);
+}
+
+.boot-line.title-text {
+    font-size: 1.8rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    animation: glitchShimmer 3s ease-in-out infinite;
+}
+
+.boot-line.subtitle-text {
+    font-size: 0.85rem;
+    color: rgba(148, 163, 184, 0.8);
+    letter-spacing: 4px;
+    font-weight: 400;
+}
+
+.boot-line.status-text {
+    font-size: 0.75rem;
+    color: rgba(59, 130, 246, 0.9);
+    margin-top: 10px;
+}
+
+.boot-line.ready-text {
+    font-size: 1rem;
+    color: #10b981;
+    font-weight: 700;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    margin-top: 14px;
+}
+
+@keyframes glitchShimmer {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+    92% { filter: brightness(1); }
+    94% { filter: brightness(0.7) hue-rotate(10deg); }
+    96% { filter: brightness(1.4) hue-rotate(-5deg); }
+    98% { filter: brightness(1); }
+}
+
+/* ── HUD Corner Brackets ── */
+.hud-corner {
+    position: absolute;
+    width: 30px; height: 30px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.hud-corner.show { opacity: 0.4; }
+
+.hud-tl { top: 40px; left: 40px; border-top: 2px solid #3b82f6; border-left: 2px solid #3b82f6; }
+.hud-tr { top: 40px; right: 40px; border-top: 2px solid #3b82f6; border-right: 2px solid #3b82f6; }
+.hud-bl { bottom: 40px; left: 40px; border-bottom: 2px solid #3b82f6; border-left: 2px solid #3b82f6; }
+.hud-br { bottom: 40px; right: 40px; border-bottom: 2px solid #3b82f6; border-right: 2px solid #3b82f6; }
+
+/* ── Electric arc sparks ── */
+.arc-spark {
+    position: absolute;
+    width: 100px; height: 2px;
+    opacity: 0;
+}
+.arc-spark.show {
+    animation: sparkFlash 0.3s ease forwards;
+}
+.arc-spark-1 { top: 30%; left: 10%; background: linear-gradient(90deg, transparent, #3b82f6, transparent); transform: rotate(15deg); }
+.arc-spark-2 { top: 60%; right: 8%; background: linear-gradient(90deg, transparent, #8b5cf6, transparent); transform: rotate(-20deg); }
+.arc-spark-3 { bottom: 25%; left: 20%; background: linear-gradient(90deg, transparent, #10b981, transparent); transform: rotate(8deg); }
+
+@keyframes sparkFlash {
+    0% { opacity: 0; transform: scaleX(0.3); }
+    50% { opacity: 0.8; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(0.1); }
+}
+
+/* ── Skip button ── */
+.skip-intro {
+    position: absolute;
+    bottom: 30px; right: 40px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(148, 163, 184, 0.5);
+    background: none;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    padding: 6px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 3;
+    letter-spacing: 1px;
+}
+.skip-intro:hover {
+    color: #f8fafc;
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* ── Horizontal scanning bar ── */
+.h-scan {
+    position: absolute;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.15) 20%, rgba(59,130,246,0.4) 50%, rgba(59,130,246,0.15) 80%, transparent 100%);
+    opacity: 0;
+    top: 0;
+    left: 0;
+}
+.h-scan.show {
+    opacity: 1;
+    animation: hScanDrop 3s ease-in-out forwards;
+}
+@keyframes hScanDrop {
+    from { top: 0; }
+    to { top: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block intro %}
+<!-- ═══════════════ JARVIS INTRO OVERLAY ═══════════════ -->
+<div id="introOverlay">
+    <div class="intro-grid" id="introGrid"></div>
+    <div class="h-scan" id="hScan"></div>
+    
+    <!-- HUD corners -->
+    <div class="hud-corner hud-tl" id="hudTL"></div>
+    <div class="hud-corner hud-tr" id="hudTR"></div>
+    <div class="hud-corner hud-bl" id="hudBL"></div>
+    <div class="hud-corner hud-br" id="hudBR"></div>
+
+    <!-- Arc sparks -->
+    <div class="arc-spark arc-spark-1" id="spark1"></div>
+    <div class="arc-spark arc-spark-2" id="spark2"></div>
+    <div class="arc-spark arc-spark-3" id="spark3"></div>
+
+    <!-- Machine Core Visualization -->
+    <div class="machine-core" id="machineCore">
+        <div class="core-ring core-ring-1" id="ring1"></div>
+        <div class="core-ring core-ring-2" id="ring2"></div>
+        <div class="core-ring core-ring-3" id="ring3"></div>
+        <div class="core-ring core-ring-4" id="ring4"></div>
+        <div class="scan-line" id="scanLine"></div>
+        <div class="core-center" id="coreCenter"></div>
+        
+        <!-- Phase coil glows -->
+        <div class="phase-glow phase-a-glow" id="phaseA"></div>
+        <div class="phase-glow phase-b-glow" id="phaseB"></div>
+        <div class="phase-glow phase-c-glow" id="phaseC"></div>
+        
+        <!-- Flux lines -->
+        <div class="flux-line flux-line-1" id="flux1"></div>
+        <div class="flux-line flux-line-2" id="flux2"></div>
+        <div class="flux-line flux-line-3" id="flux3"></div>
+    </div>
+
+    <!-- Boot text terminal -->
+    <div class="boot-text">
+        <div class="boot-line sys-text" id="boot1">▸ INITIALIZING CORE SYSTEMS...</div>
+        <div class="boot-line sys-text" id="boot2">▸ LOADING MACHINE PARAMETERS... OK</div>
+        <div class="boot-line sys-text" id="boot3">▸ FIELD EXCITATION CIRCUIT... ENERGIZED</div>
+        <div class="boot-line sys-text" id="boot4">▸ STATOR WINDING INTEGRITY... VERIFIED</div>
+        <div class="boot-line sys-text" id="boot5">▸ THREE-PHASE SYNCHRONIZATION... LOCKED</div>
+        <div class="boot-line title-text" id="boot6">E M V L</div>
+        <div class="boot-line subtitle-text" id="boot7">ELECTRICAL MACHINE VIRTUAL LABORATORY</div>
+        <div class="boot-line status-text" id="boot8">◆ EMF Module Ready &nbsp; ◆ MMF Module Ready &nbsp; ◆ ZPF Module Ready</div>
+        <div class="boot-line ready-text" id="boot9">⚡ ALL SYSTEMS ONLINE ⚡</div>
+    </div>
+
+    <button class="skip-intro" id="skipIntro" onclick="dismissIntro()">SKIP ›</button>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════ ACTUAL DASHBOARD CONTENT ═══════════════ -->
+<div id="dashboardContent" style="opacity: 0; transition: opacity 0.6s ease 0.2s;">
+
+<div class="hero-section" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);">
+    <div style="position: relative; z-index: 1;">
+        <h2 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 15px; letter-spacing: -0.02em;">Electrical Machine Virtual Laboratory</h2>
+        <p style="font-size: 1.15rem; opacity: 0.95; max-width: 650px; margin-bottom: 25px; line-height: 1.6; font-weight: 300;">Explore high-fidelity interactive phasor animations and mathematically rigorous simulations to determine the voltage regulation of synchronous generators (alternators) using EMF, MMF, and ZPF methods.</p>
+        <div style="display: flex; gap: 15px;">
+            <a href="{{ url_for('emf') }}" class="btn btn-success glow-btn-pulse" style="padding: 14px 30px; font-size: 1.1rem; font-weight: 600; border-radius: 8px;">Start Synchronous Impedance Lab <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></a>
+        </div>
+    </div>
+    <div style="position: absolute; right: -40px; top: -40px; opacity: 0.08; font-size: 320px; pointer-events: none;">
+        <i class="fa-solid fa-bolt"></i>
+    </div>
+</div>
+
+<!-- ─── Interactive Synchronous Alternator Visualizer Section ─── -->
+<div class="machine-visualizer-card">
+    <div class="machine-visualizer-title">
+        <i class="fa-solid fa-gears" style="font-size: 1.6rem; animation: fa-spin 10s linear infinite;"></i>
+        <span>Interactive Synchronous Alternator Visualizer</span>
+    </div>
+    
+    <div class="machine-visualizer-layout">
+        <!-- Visual Port -->
+        <div class="alternator-viewport">
+            <!-- HUD grid & tech accents -->
+            <div class="viewport-hud-grid"></div>
+            <div class="viewport-hud-ring vhr-1"></div>
+            <div class="viewport-hud-ring vhr-2"></div>
+            <div class="viewport-hud-corner vh-tl"></div>
+            <div class="viewport-hud-corner vh-tr"></div>
+            <div class="viewport-hud-corner vh-bl"></div>
+            <div class="viewport-hud-corner vh-br"></div>
+            <div class="viewport-hud-text vt-1">SYS.STATUS: ACTIVE</div>
+            <div class="viewport-hud-text vt-2" id="hudRotation">ROTATION: 1500 RPM</div>
+            <div class="viewport-hud-text vt-3">POLES: 2</div>
+            <div class="viewport-hud-text vt-4">COILS: 3Φ [R-Y-B]</div>
+            
+            <div class="stator-outer">
+                <!-- Three-Phase Glowing Coils -->
+                <div class="stator-pole phase-a" title="Phase A Coil (Red)"></div>
+                <div class="stator-pole phase-b" title="Phase B Coil (Yellow)"></div>
+                <div class="stator-pole phase-c" title="Phase C Coil (Blue)"></div>
+                
+                <!-- Rotating Rotor -->
+                <div class="rotor-outer" id="alternatorRotor">
+                    <div class="rotor-shaft"></div>
+                    <div class="rotor-pole-n">N</div>
+                    <div class="rotor-pole-s">S</div>
+                    <div class="rotor-flux-lines" id="rotorFluxLines"></div>
+                </div>
+            </div>
+            
+            <div style="position: absolute; bottom: 15px; left: 15px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; font-family: 'Orbitron', monospace; color: var(--primary); text-shadow: 0 0 5px rgba(59, 130, 246, 0.3); letter-spacing: 1px;">
+                MODEL: 2-POLE ALTERNATOR
+            </div>
+        </div>
+        
+        <!-- Controls & Output Meters -->
+        <div class="machine-visualizer-controls">
+            <div class="control-item-panel">
+                <div class="control-item-header">
+                    <span class="control-item-label"><i class="fa-solid fa-gauge-high" style="color: var(--primary);"></i> Prime Mover Speed</span>
+                    <span class="control-item-value" id="valRpm">1500 RPM</span>
+                </div>
+                <input type="range" class="alternator-slider" id="sliderRpm" min="0" max="3000" step="50" value="1500">
+            </div>
+            
+            <div class="control-item-panel">
+                <div class="control-item-header">
+                    <span class="control-item-label"><i class="fa-solid fa-battery-three-quarters" style="color: var(--secondary);"></i> Field Excitation (If)</span>
+                    <span class="control-item-value" id="valIf">5.00 A</span>
+                </div>
+                <input type="range" class="alternator-slider" id="sliderIf" min="0" max="10" step="0.2" value="5.0">
+            </div>
+            
+            <div class="machine-readouts">
+                <div class="readout-card">
+                    <div class="readout-title">Induced Voltage (E0)</div>
+                    <div class="readout-value" id="readoutVoltage">415.0 V</div>
+                    <canvas id="voltageWaveform" class="telemetry-waveform" width="220" height="40"></canvas>
+                </div>
+                <div class="readout-card">
+                    <div class="readout-title">Output Frequency</div>
+                    <div class="readout-value" id="readoutFreq">50.0 Hz</div>
+                    <canvas id="freqWaveform" class="telemetry-waveform" width="220" height="40"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 style="margin: 40px 0 20px 0; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-flask"></i> Available Experiments</h3>
+<div class="grid-container" style="margin-bottom: 40px;">
+    <div class="card experiment-card" style="position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: 12px; transition: var(--transition);">
+        <span class="experiment-badge">LAB 1</span>
+        <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 10px; font-size: 1.25rem;"><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> EMF Method</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem;">Synchronous Impedance Method. Calculates voltage regulation by combining the open-circuit excitation curves and short-circuit linear curves to identify synchronous impedance ($Z_s$) at rated conditions.</p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: auto;">
+            <a href="{{ url_for('emf') }}" class="btn btn-primary" style="flex: 1; text-align: center; font-weight: 600;">Launch Lab</a>
+        </div>
+    </div>
+    
+    <div class="card experiment-card" style="position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: 12px; transition: var(--transition);">
+        <span class="experiment-badge">LAB 2</span>
+        <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 10px; font-size: 1.25rem;"><i class="fa-solid fa-chart-area" style="color: var(--secondary);"></i> MMF Method</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem;">Ampere-Turn Method. Combines no-load excitation field requirements ($I_{f0}$) and equivalent short-circuit armature reaction field requirements ($I_{f\_sc}$) vectorially to obtain high physical accuracy.</p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: auto;">
+            <a href="{{ url_for('mmf') }}" class="btn btn-primary" style="flex: 1; text-align: center; font-weight: 600;">Launch Lab</a>
+        </div>
+    </div>
+    
+    <div class="card experiment-card" style="position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: 12px; transition: var(--transition);">
+        <span class="experiment-badge">LAB 3</span>
+        <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 10px; font-size: 1.25rem;"><i class="fa-solid fa-chart-pie" style="color: var(--accent);"></i> ZPF Method</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem;">Potier Triangle Method. Separates the leakage reactance voltage drop ($I X_l$) and equivalent armature reaction MMF ($F_{ar}$) utilizing the Potier triangle, representing the gold standard of regulator estimation.</p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: auto;">
+            <a href="{{ url_for('zpf') }}" class="btn btn-primary" style="flex: 1; text-align: center; font-weight: 600;">Launch Lab</a>
+        </div>
+    </div>
+</div>
+
+<div class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 50px;">
+    <div class="card text-center" style="padding: 25px; border-radius: 12px;">
+        <i class="fa-solid fa-laptop-code" style="font-size: 2.6rem; color: var(--primary); margin-bottom: 15px;"></i>
+        <h4 style="margin-bottom: 10px; font-weight: 700;">Interactive Phasor Plots</h4>
+        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">Observe dynamic, vector-by-vector phasor diagrams showing terminal characteristics ($V, I$) and load angles.</p>
+    </div>
+    <div class="card text-center" style="padding: 25px; border-radius: 12px;">
+        <i class="fa-solid fa-bolt" style="font-size: 2.6rem; color: var(--warning); margin-bottom: 15px;"></i>
+        <h4 style="margin-bottom: 10px; font-weight: 700;">Physical Realism</h4>
+        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">Calculations strictly adhere to synchronous generator equations under lagging, unity, and leading power factors.</p>
+    </div>
+    <div class="card text-center" style="padding: 25px; border-radius: 12px;">
+        <i class="fa-solid fa-file-pdf" style="font-size: 2.6rem; color: var(--accent); margin-bottom: 15px;"></i>
+        <h4 style="margin-bottom: 10px; font-weight: 700;">Lab Report Generator</h4>
+        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">Export a clean CSV spreadsheet with all inputs, intermediate triangle values, and calculated regulations.</p>
+    </div>
+</div>
+
+
+<!-- Footer with credits -->
+<footer style="margin-top: 60px; text-align: center; padding: 30px; border-top: 1px solid var(--border); font-size: 0.9rem; color: var(--text-muted);">
+    <p>© 2026 Electrical Machine Virtual Laboratory. All rights reserved.</p>
+    <p style="margin-top: 8px;">Developed with <i class="fa-solid fa-heart" style="color: #ef4444; animation: heart-beat 1.5s infinite ease-in-out;"></i> by <strong style="color: var(--primary); font-size: 1rem; text-shadow: 0 0 8px rgba(59, 130, 246, 0.3);">Aravind S and Balqis Ahmed</strong></p>
+</footer>
+
+<style>
+@keyframes heart-beat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+</style>
+
+</div><!-- end dashboardContent -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ═══════════════════════════════════════════════════
+    //  JARVIS-STYLE BOOT SEQUENCE ENGINE
+    // ═══════════════════════════════════════════════════
+    (function() {
+        const overlay = document.getElementById('introOverlay');
+        const content = document.getElementById('dashboardContent');
+        
+        // Only play once per session
+        if (sessionStorage.getItem('emvl_intro_played')) {
+            overlay.remove();
+            content.style.opacity = '1';
+            content.style.transition = 'none';
+            initAlternator();
+            return;
+        }
+
+        document.body.classList.add('intro-active');
+
+        // Timeline: [delay_ms, elementId, className_to_add]
+        const timeline = [
+            // Phase 1: Grid and HUD corners appear
+            [300,  'introGrid', 'show'],
+            [450,  'hudTL', 'show'],
+            [600,  'hudTR', 'show'],
+            [750,  'hudBL', 'show'],
+            [900,  'hudBR', 'show'],
+            [600,  'hScan', 'show'],
+
+            // Phase 2: Machine core rings expand from center
+            [1200, 'ring1', 'show'],
+            [1500, 'ring2', 'show'],
+            [1800, 'ring3', 'show'],
+            [2100, 'ring4', 'show'],
+
+            // Phase 3: Scan line, core center power up
+            [2400, 'scanLine', 'show'],
+            [2700, 'coreCenter', 'show'],
+
+            // Phase 4: Phase coils energize
+            [3000, 'phaseA', 'show'],
+            [3300, 'phaseB', 'show'],
+            [3600, 'phaseC', 'show'],
+
+            // Phase 5: Flux lines appear
+            [3900, 'flux1', 'show'],
+            [4050, 'flux2', 'show'],
+            [4200, 'flux3', 'show'],
+
+            // Phase 6: Electric arc sparks
+            [3000, 'spark1', 'show'],
+            [4200, 'spark2', 'show'],
+            [5100, 'spark3', 'show'],
+
+            // Phase 7: Boot text lines appear one by one
+            [1500, 'boot1', 'show'],
+            [2250, 'boot2', 'show'],
+            [3000, 'boot3', 'show'],
+            [3750, 'boot4', 'show'],
+            [4500, 'boot5', 'show'],
+            [5400, 'boot6', 'show'],
+            [5850, 'boot7', 'show'],
+            [6600, 'boot8', 'show'],
+            [7500, 'boot9', 'show'],
+        ];
+
+        // Execute timeline
+        timeline.forEach(([delay, id, cls]) => {
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add(cls);
+            }, delay);
+        });
+
+        // Dismiss after boot sequence (originally 6200, now 3s longer = 9200)
+        setTimeout(dismissIntro, 9200);
+    })();
+
+    function dismissIntro() {
+        const overlay = document.getElementById('introOverlay');
+        const content = document.getElementById('dashboardContent');
+        if (!overlay || overlay.classList.contains('fade-out')) return;
+        
+        document.body.classList.remove('intro-active');
+        overlay.classList.add('fade-out');
+        content.style.opacity = '1';
+        sessionStorage.setItem('emvl_intro_played', '1');
+
+        setTimeout(() => {
+            overlay.remove();
+            initAlternator();
+        }, 900);
+    }
+
+    // ─── Real-time Interactive Synchronous Alternator physics engine ───
+    function initAlternator() {
+        const sliderRpm = document.getElementById('sliderRpm');
+        const sliderIf = document.getElementById('sliderIf');
+        const valRpm = document.getElementById('valRpm');
+        const valIf = document.getElementById('valIf');
+        const hudRotation = document.getElementById('hudRotation');
+        const readoutVoltage = document.getElementById('readoutVoltage');
+        const readoutFreq = document.getElementById('readoutFreq');
+        const alternatorRotor = document.getElementById('alternatorRotor');
+        const rotorFluxLines = document.getElementById('rotorFluxLines');
+        
+        // Waveform Canvases
+        const voltCanvas = document.getElementById('voltageWaveform');
+        const freqCanvas = document.getElementById('freqWaveform');
+        const voltCtx = voltCanvas ? voltCanvas.getContext('2d') : null;
+        const freqCtx = freqCanvas ? freqCanvas.getContext('2d') : null;
+        
+        if (!sliderRpm) return; // safety
+        
+        let rotationAngle = 0;
+        let wavePhase = 0;
+        let lastTime = performance.now();
+        
+        function updatePhysicsLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            const rpm = parseFloat(sliderRpm.value);
+            const fieldCurrent = parseFloat(sliderIf.value);
+            
+            const frequency = rpm / 60;
+            const E0 = 3.32 * frequency * fieldCurrent;
+            
+            readoutVoltage.textContent = `${E0.toFixed(1)} V`;
+            readoutFreq.textContent = `${frequency.toFixed(1)} Hz`;
+            if (hudRotation) {
+                hudRotation.textContent = `ROTATION: ${rpm} RPM`;
+            }
+            
+            const angleVelocity = (rpm / 60) * 360;
+            rotationAngle = (rotationAngle + angleVelocity * (deltaTime / 1000)) % 360;
+            alternatorRotor.style.transform = `rotate(${rotationAngle}deg)`;
+            
+            const scaleBase = 1.0 + (fieldCurrent / 10) * 0.15;
+            rotorFluxLines.style.opacity = (fieldCurrent / 10).toFixed(2);
+            rotorFluxLines.style.transform = `translate(-50%, -50%) scale(${scaleBase})`;
+            
+            if (frequency > 0) {
+                document.documentElement.style.setProperty('--pulse-speed-a', `${1/frequency}s`);
+            }
+            
+            // Draw real-time high-tech waveforms
+            if (frequency > 0) {
+                wavePhase -= (frequency / 50) * (deltaTime / 1000) * 8; // Phase speed varies with frequency
+            }
+            
+            if (voltCanvas && voltCtx) {
+                // Ensure canvas matches its container display size (prevents blurriness)
+                const rect = voltCanvas.getBoundingClientRect();
+                if (voltCanvas.width !== rect.width || voltCanvas.height !== rect.height) {
+                    voltCanvas.width = rect.width;
+                    voltCanvas.height = rect.height;
+                }
+                
+                voltCtx.clearRect(0, 0, voltCanvas.width, voltCanvas.height);
+                
+                // Draw a subtle grid background
+                voltCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                voltCtx.lineWidth = 1;
+                voltCtx.beginPath();
+                for (let i = 0; i < voltCanvas.width; i += 20) {
+                    voltCtx.moveTo(i, 0);
+                    voltCtx.lineTo(i, voltCanvas.height);
+                }
+                voltCtx.stroke();
+                
+                // Draw neon green sine wave
+                voltCtx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
+                voltCtx.lineWidth = 2.5;
+                voltCtx.shadowBlur = 6;
+                voltCtx.shadowColor = 'rgba(16, 185, 129, 0.7)';
+                voltCtx.beginPath();
+                
+                const amp = (E0 / 800) * (voltCanvas.height * 0.35); // Peak height depends on voltage
+                const freqScale = (frequency / 50) * 0.1 + 0.02; // Sine wave width depends on speed
+                
+                for (let x = 0; x < voltCanvas.width; x++) {
+                    const y = voltCanvas.height / 2 + Math.sin(x * freqScale + wavePhase) * amp;
+                    if (x === 0) voltCtx.moveTo(x, y);
+                    else voltCtx.lineTo(x, y);
+                }
+                voltCtx.stroke();
+                voltCtx.shadowBlur = 0; // reset
+            }
+            
+            if (freqCanvas && freqCtx) {
+                const rect = freqCanvas.getBoundingClientRect();
+                if (freqCanvas.width !== rect.width || freqCanvas.height !== rect.height) {
+                    freqCanvas.width = rect.width;
+                    freqCanvas.height = rect.height;
+                }
+                
+                freqCtx.clearRect(0, 0, freqCanvas.width, freqCanvas.height);
+                
+                // Draw a subtle grid background
+                freqCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                freqCtx.lineWidth = 1;
+                freqCtx.beginPath();
+                for (let i = 0; i < freqCanvas.width; i += 20) {
+                    freqCtx.moveTo(i, 0);
+                    freqCtx.lineTo(i, freqCanvas.height);
+                }
+                freqCtx.stroke();
+                
+                // Draw neon blue/purple sine wave
+                freqCtx.strokeStyle = 'rgba(59, 130, 246, 0.85)';
+                freqCtx.lineWidth = 2.5;
+                freqCtx.shadowBlur = 6;
+                freqCtx.shadowColor = 'rgba(59, 130, 246, 0.7)';
+                freqCtx.beginPath();
+                
+                const amp = frequency > 0 ? (freqCanvas.height * 0.35) : 0; // Constant amplitude if rotating
+                const freqScale = (frequency / 50) * 0.1 + 0.02;
+                
+                for (let x = 0; x < freqCanvas.width; x++) {
+                    const y = freqCanvas.height / 2 + Math.sin(x * freqScale + wavePhase) * amp;
+                    if (x === 0) freqCtx.moveTo(x, y);
+                    else freqCtx.lineTo(x, y);
+                }
+                freqCtx.stroke();
+                freqCtx.shadowBlur = 0; // reset
+            }
+            
+            requestAnimationFrame(updatePhysicsLoop);
+        }
+        
+        sliderRpm.addEventListener('input', () => {
+            valRpm.textContent = `${sliderRpm.value} RPM`;
+        });
+        sliderIf.addEventListener('input', () => {
+            valIf.textContent = `${parseFloat(sliderIf.value).toFixed(2)} A`;
+        });
+        
+        requestAnimationFrame(updatePhysicsLoop);
+    }
+</script>
+{% endblock %}

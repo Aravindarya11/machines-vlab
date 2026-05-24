@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz | EMVL{% endblock %}
+{% block page_title %}Knowledge Assessment{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div id="quiz-intro" class="text-center">
+        <i class="fa-solid fa-graduation-cap" style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></i>
+        <h3 style="margin-bottom: 15px;">Test Your Knowledge</h3>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">This quiz contains multiple-choice questions related to the voltage regulation of synchronous machines using EMF, MMF, and ZPF methods.</p>
+        <button class="btn btn-primary" id="btnStartQuiz" style="padding: 12px 30px; font-size: 1.1rem;">Start Quiz</button>
+    </div>
+
+    <div id="quiz-container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+            <div style="font-weight: 600; color: var(--primary);">Question <span id="currentQ">1</span>/<span id="totalQ">5</span></div>
+            <div style="font-weight: 600; color: var(--warning);"><i class="fa-regular fa-clock"></i> <span id="timer">05:00</span></div>
+        </div>
+
+        <h4 id="questionText" style="margin-bottom: 25px; line-height: 1.5; font-size: 1.2rem;"></h4>
+        
+        <div id="optionsContainer" style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Options injected by JS -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+            <button class="btn btn-secondary" id="btnPrev" disabled>Previous</button>
+            <button class="btn btn-primary" id="btnNext">Next</button>
+            <button class="btn btn-success" id="btnSubmit" style="display: none;">Submit Quiz</button>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div style="width: 100%; height: 6px; background-color: var(--bg-color); border-radius: 3px; margin-top: 30px; overflow: hidden;">
+            <div id="progressBar" style="width: 20%; height: 100%; background-color: var(--primary); transition: width 0.3s ease;"></div>
+        </div>
+    </div>
+
+    <div id="quiz-results" style="display: none;" class="text-center">
+        <i class="fa-solid fa-trophy" style="font-size: 4rem; color: var(--warning); margin-bottom: 20px;"></i>
+        <h3 style="margin-bottom: 15px;">Quiz Completed!</h3>
+        <p style="font-size: 1.2rem; margin-bottom: 10px;">Your Score: <strong id="scoreText" style="color: var(--primary); font-size: 1.5rem;"></strong></p>
+        <p id="scoreMessage" style="color: var(--text-muted); margin-bottom: 30px;"></p>
+        <button class="btn btn-primary" id="btnRestartQuiz">Restart Quiz</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}

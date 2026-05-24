@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Electrical Machine Virtual Laboratory - Learn and Simulate EMF, MMF, and ZPF methods.">
+    <title>{% block title %}Electrical Machine Virtual Laboratory{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <!-- MathJax for rendering math formulas -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% block intro %}{% endblock %}
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar collapsed" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-bolt"></i> EMVL</h2>
+                <button class="toggle-btn" id="toggleSidebar"><i class="fa-solid fa-bars"></i></button>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}" data-tooltip="Dashboard" class="{% if request.endpoint == 'index' %}active{% endif %}"><i class="fa-solid fa-house"></i> <span>Dashboard</span></a></li>
+                <li><a href="{{ url_for('emf') }}" data-tooltip="EMF Method" class="{% if request.endpoint == 'emf' %}active{% endif %}"><i class="fa-solid fa-chart-line"></i> <span>EMF Method</span></a></li>
+                <li><a href="{{ url_for('mmf') }}" data-tooltip="MMF Method" class="{% if request.endpoint == 'mmf' %}active{% endif %}"><i class="fa-solid fa-chart-area"></i> <span>MMF Method</span></a></li>
+                <li><a href="{{ url_for('zpf') }}" data-tooltip="ZPF Method" class="{% if request.endpoint == 'zpf' %}active{% endif %}"><i class="fa-solid fa-chart-pie"></i> <span>ZPF Method</span></a></li>
+                <li><a href="{{ url_for('motor') }}" data-tooltip="Motor Inspector" class="{% if request.endpoint == 'motor' %}active{% endif %}"><i class="fa-solid fa-compass"></i> <span>Motor Inspector</span></a></li>
+                <li><a href="{{ url_for('quiz') }}" data-tooltip="Quiz" class="{% if request.endpoint == 'quiz' %}active{% endif %}"><i class="fa-solid fa-list-check"></i> <span>Quiz</span></a></li>
+                <li><a href="{{ url_for('report') }}" data-tooltip="Report" class="{% if request.endpoint == 'report' %}active{% endif %}"><i class="fa-solid fa-file-pdf"></i> <span>Report</span></a></li>
+                <li><a href="{{ url_for('about') }}" data-tooltip="About" class="{% if request.endpoint == 'about' %}active{% endif %}"><i class="fa-solid fa-circle-info"></i> <span>About</span></a></li>
+                <li><a href="{{ url_for('contact') }}" data-tooltip="Contact" class="{% if request.endpoint == 'contact' %}active{% endif %}"><i class="fa-solid fa-envelope"></i> <span>Contact</span></a></li>
+            </ul>
+            <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="theme-toggle" id="themeToggle"><i class="fa-solid fa-moon"></i> <span>Theme</span></button>
+                <div class="developer-credit" style="font-size: 0.75rem; color: var(--text-muted); text-align: center; font-weight: 500; border-top: 1px solid var(--border); padding-top: 8px; width: 100%;">
+                    Developed by <span style="color: var(--primary); font-weight: bold;">Aravind S and Balqis Ahmed</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button class="toggle-btn" id="toggleSidebarTopbar" style="background: none; border: none; color: var(--text-main); font-size: 1.25rem; cursor: pointer; padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: var(--transition);"><i class="fa-solid fa-bars"></i></button>
+                    <div class="page-title">
+                        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <span class="datetime" id="currentDatetime"></span>
+                </div>
+            </header>
+            
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

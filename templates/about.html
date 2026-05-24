@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}About | EMVL{% endblock %}
+{% block page_title %}About Virtual Lab{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+    <h3 class="card-title">Virtual Laboratory for Synchronous Machines</h3>
+    <p style="margin-bottom: 15px; line-height: 1.6; color: var(--text-muted);">
+        The Electrical Machine Virtual Laboratory is an interactive educational platform designed for engineering students. It aims to bridge the gap between theoretical knowledge and practical application by providing a realistic simulation environment for determining the voltage regulation of synchronous machines.
+    </p>
+    <p style="margin-bottom: 15px; line-height: 1.6; color: var(--text-muted);">
+        Traditional laboratory sessions often involve tedious graph plotting and complex calculations. This virtual lab automates these processes while maintaining the educational value by animating the step-by-step construction of graphs exactly as taught in textbooks.
+    </p>
+</div>
+
+<div class="grid-container">
+    <div class="card">
+        <h4 style="margin-bottom: 15px; color: var(--primary);">Methods Covered</h4>
+        <ul style="padding-left: 20px; line-height: 1.6; color: var(--text-muted);">
+            <li style="margin-bottom: 10px;"><strong>EMF Method (Synchronous Impedance Method):</strong> A pessimistic method using OCC and SCC to find synchronous impedance.</li>
+            <li style="margin-bottom: 10px;"><strong>MMF Method (Ampere-Turn Method):</strong> An optimistic method that treats all voltage drops as MMFs.</li>
+            <li style="margin-bottom: 10px;"><strong>ZPF Method (Potier Triangle Method):</strong> The most accurate method that separates armature leakage reactance and armature reaction effects.</li>
+        </ul>
+    </div>
+    <div class="card">
+        <h4 style="margin-bottom: 15px; color: var(--primary);">Technologies Used</h4>
+        <ul style="padding-left: 20px; line-height: 1.6; color: var(--text-muted);">
+            <li style="margin-bottom: 10px;"><strong>Frontend:</strong> HTML5, Vanilla CSS (Custom Variables, Flexbox, Grid), JavaScript (ES6+).</li>
+            <li style="margin-bottom: 10px;"><strong>Graphing Engine:</strong> Plotly.js for interactive, animated, and high-performance charting.</li>
+            <li style="margin-bottom: 10px;"><strong>Backend:</strong> Python Flask for serving templates and providing a scalable architecture.</li>
+            <li style="margin-bottom: 10px;"><strong>UI/UX:</strong> Dark theme, fully responsive dashboard, FontAwesome icons, Google Fonts.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

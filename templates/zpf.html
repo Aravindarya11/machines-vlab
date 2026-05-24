@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}ZPF Method | EMVL{% endblock %}
+{% block page_title %}ZPF (Potier Triangle) Method{% endblock %}
+
+{% block content %}
+<div class="grid-container" style="grid-template-columns: 350px 1fr;">
+    <!-- Input Section -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <h3 class="card-title" style="margin: 0; font-size: 1.15rem;"><i class="fa-solid fa-keyboard"></i> Data Input</h3>
+            <div class="status-indicator">
+                <span class="led-light ready" id="statusLed"></span> <span id="statusText">READY</span>
+            </div>
+        </div>
+        
+        <div class="tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button class="btn btn-primary" id="tabManual" style="flex: 1;">Manual Entry</button>
+            <button class="btn btn-secondary" id="tabCSV" style="flex: 1;">Upload CSV</button>
+        </div>
+
+        <div id="manualInputSection">
+            <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">OCC Data</h4>
+            <div class="form-group">
+                <label class="form-label">Field Current (If) A</label>
+                <input type="text" class="form-control" id="occIf" value="0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Line Voltage (Voc) V</label>
+                <input type="text" class="form-control" id="occVoc" value="0, 100, 200, 280, 340, 385, 415, 435, 450, 460">
+            </div>
+
+            <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">ZPF Data (at rated current)</h4>
+            <div class="form-group">
+                <label class="form-label">Field Current (If) A</label>
+                <input type="text" class="form-control" id="zpfIf" value="0.8, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Terminal Voltage (V) V</label>
+                <input type="text" class="form-control" id="zpfV" value="0, 50, 150, 250, 310, 350, 385, 415">
+            </div>
+        </div>
+
+        <div id="csvInputSection" style="display: none;">
+            <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">Upload CSV Data</h4>
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-file-csv" style="color: var(--primary);"></i> 1. OCC Data CSV</label>
+                <input type="file" class="form-control" id="occCsvFileInput" accept=".csv">
+                <small style="color: var(--text-muted); display: block; margin-top: 5px;">Expected columns: Field Current (If), Open Circuit Voltage (Voc)</small>
+                <div id="occCsvStatus" style="font-size: 0.85rem; color: #10b981; margin-top: 5px; display: none;">
+                    <i class="fa-solid fa-circle-check"></i> OCC data loaded (0 rows)
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label class="form-label"><i class="fa-solid fa-file-csv" style="color: var(--accent);"></i> 2. ZPF Data CSV</label>
+                <input type="file" class="form-control" id="zpfCsvFileInput" accept=".csv">
+                <small style="color: var(--text-muted); display: block; margin-top: 5px;">Expected columns: Field Current (If), Terminal Voltage (V)</small>
+                <div id="zpfCsvStatus" style="font-size: 0.85rem; color: #10b981; margin-top: 5px; display: none;">
+                    <i class="fa-solid fa-circle-check"></i> ZPF data loaded (0 rows)
+                </div>
+            </div>
+        </div>
+
+        <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">Machine Parameters</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label class="form-label">Rated Voltage</label>
+                    <input type="number" class="form-control" id="ratedV" value="415">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rated Current</label>
+                    <input type="number" class="form-control" id="ratedI" value="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Armature Res (Ra) Ω</label>
+                    <input type="number" class="form-control" id="ra" value="1.2">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Power Factor</label>
+                    <input type="number" class="form-control" id="pf" value="0.8" step="0.1" min="0" max="1">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">PF Type</label>
+                    <select class="form-control" id="pfType">
+                        <option value="lagging">Lagging</option>
+                        <option value="leading">Leading</option>
+                        <option value="unity">Unity</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn btn-success" id="btnStart" style="width: 100%; margin-top: 10px;">
+                <i class="fa-solid fa-play"></i> Start Animation
+            </button>
+    </div>
+
+    <!-- Graph Section -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 10px;">
+            <div id="zpfGraph" class="graph-container"></div>
+            
+            <div class="controls-panel">
+                <button class="btn btn-secondary btn-icon" id="btnPause" title="Pause"><i class="fa-solid fa-pause"></i></button>
+                <button class="btn btn-secondary btn-icon" id="btnResume" title="Resume"><i class="fa-solid fa-play"></i></button>
+                <button class="btn btn-secondary btn-icon" id="btnReset" title="Reset"><i class="fa-solid fa-rotate-right"></i></button>
+                
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                    <label style="color: var(--text-muted); font-size: 0.9rem;">Speed:</label>
+                    <input type="range" id="speedSlider" min="1" max="10" value="5" style="width: 100px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><i class="fa-solid fa-person-chalkboard"></i> Construction Steps</h3>
+            <div class="explanation-panel" id="explanationText">
+                Welcome to the ZPF Method simulation. Enter data and start the animation.
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" style="display: none;">
+            <h3 class="card-title"><i class="fa-solid fa-calculator"></i> Results</h3>
+            <div id="calculationsText" style="line-height: 1.8;"></div>
+            <button class="btn btn-primary mt-4" id="btnDownloadReport"><i class="fa-solid fa-download"></i> Download Report</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/zpfGraph.js') }}"></script>
+{% endblock %}

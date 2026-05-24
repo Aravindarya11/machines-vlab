@@ -1,0 +1,1993 @@
+:root {
+    /* Dark Theme Colors */
+    --bg-color: #0a0f1e;
+    --sidebar-bg: rgba(15, 23, 42, 0.92);
+    --card-bg: rgba(30, 41, 59, 0.65);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --secondary: #8b5cf6;
+    --accent: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --border: rgba(51, 65, 85, 0.6);
+    --shadow: rgba(0, 0, 0, 0.3);
+    --glass-blur: 16px;
+    --glass-border: rgba(255, 255, 255, 0.06);
+    
+    --transition: all 0.3s ease;
+}
+
+[data-theme="light"] {
+    /* Light Theme Colors */
+    --bg-color: #eef2f7;
+    --sidebar-bg: rgba(255, 255, 255, 0.88);
+    --card-bg: rgba(255, 255, 255, 0.72);
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary: #7c3aed;
+    --border: rgba(226, 232, 240, 0.8);
+    --shadow: rgba(0, 0, 0, 0.06);
+    --glass-blur: 14px;
+    --glass-border: rgba(0, 0, 0, 0.06);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    transition: var(--transition);
+    overflow-x: hidden;
+    /* Animated circuit-board background */
+    background-image:
+        linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+        radial-gradient(circle 600px at 20% 30%, rgba(59, 130, 246, 0.04), transparent),
+        radial-gradient(circle 400px at 80% 70%, rgba(139, 92, 246, 0.03), transparent);
+    background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%;
+    background-attachment: fixed;
+}
+
+/* Animated circuit traces overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        linear-gradient(90deg, transparent 49.5%, rgba(59,130,246,0.015) 49.5%, rgba(59,130,246,0.015) 50.5%, transparent 50.5%),
+        linear-gradient(0deg, transparent 49.5%, rgba(139,92,246,0.012) 49.5%, rgba(139,92,246,0.012) 50.5%, transparent 50.5%);
+    background-size: 120px 120px;
+    animation: circuit-drift 60s linear infinite;
+}
+
+@keyframes circuit-drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(120px, 120px); }
+}
+
+[data-theme="light"] body {
+    background-image:
+        linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+        radial-gradient(circle 600px at 20% 30%, rgba(37, 99, 235, 0.06), transparent),
+        radial-gradient(circle 400px at 80% 70%, rgba(124, 58, 237, 0.04), transparent);
+    background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%;
+}
+
+[data-theme="light"] body::before {
+    background:
+        linear-gradient(90deg, transparent 49.5%, rgba(37,99,235,0.02) 49.5%, rgba(37,99,235,0.02) 50.5%, transparent 50.5%),
+        linear-gradient(0deg, transparent 49.5%, rgba(124,58,237,0.015) 49.5%, rgba(124,58,237,0.015) 50.5%, transparent 50.5%);
+    background-size: 120px 120px;
+}
+
+/* App Layout */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+
+/* Sidebar — Glassmorphism */
+.sidebar {
+    width: 250px;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+    z-index: 100;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    border-right: none;
+    overflow: hidden;
+}
+
+/* Hide duplicate sidebar toggle button on desktop since topbar toggle is always visible */
+#toggleSidebar {
+    display: none;
+}
+
+/* Ensure child elements inside sidebar don't warp or shrink when menu is closing */
+.sidebar-header, .nav-links, .sidebar-footer {
+    width: 250px;
+    min-width: 250px;
+}
+
+.sidebar-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header h2 {
+    font-size: 1.25rem;
+    color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .sidebar-header h2 {
+    display: none;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.toggle-btn:hover {
+    color: var(--text-main);
+}
+
+.nav-links {
+    list-style: none;
+    padding: 20px 0;
+    flex-grow: 1;
+}
+
+.nav-links li {
+    margin-bottom: 5px;
+}
+
+.nav-links a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    border-left: 4px solid transparent;
+    position: relative;
+}
+
+.nav-links a i {
+    width: 24px;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-right: 10px;
+    transition: transform 0.25s ease;
+}
+
+.nav-links a:hover i {
+    transform: scale(1.15);
+}
+
+.sidebar.collapsed .nav-links a span {
+    display: none;
+}
+
+/* Tooltip on collapsed sidebar */
+.sidebar.collapsed .nav-links a {
+    position: relative;
+}
+.sidebar.collapsed .nav-links a::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 68px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    background: rgba(15, 23, 42, 0.95);
+    color: #f8fafc;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.sidebar.collapsed .nav-links a:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--text-main);
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.12), transparent);
+    border-left: 4px solid var(--primary);
+}
+
+.nav-links a.active {
+    box-shadow: inset 3px 0 12px rgba(59, 130, 246, 0.15);
+}
+
+.nav-links a.active i {
+    color: var(--primary);
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.5));
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.theme-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.theme-toggle i {
+    margin-right: 10px;
+}
+
+.sidebar.collapsed .theme-toggle span {
+    display: none;
+}
+
+.sidebar.collapsed .theme-toggle i {
+    margin-right: 0;
+    margin: 0 auto;
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* Important for flex children to allow text ellipsis */
+}
+
+.topbar {
+    height: 70px;
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+
+.page-title h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.content-wrapper {
+    padding: 30px;
+    flex-grow: 1;
+    overflow-y: auto;
+    /* Page entry animation */
+    animation: pageEnter 0.45s ease both;
+}
+
+@keyframes pageEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards & Layout */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Glassmorphism Card */
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid var(--glass-border);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), 0 0 20px rgba(59, 130, 246, 0.06);
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.btn-success {
+    background-color: var(--accent);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+/* Forms & Inputs */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-main);
+    transition: all 0.3s ease;
+    font-size: 0.92rem;
+}
+
+[data-theme="light"] .form-control {
+    background: rgba(241, 245, 249, 0.7);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 0 16px rgba(59, 130, 246, 0.12), inset 0 0 6px rgba(59, 130, 246, 0.06);
+    background: rgba(15, 23, 42, 0.7);
+}
+
+[data-theme="light"] .form-control:focus {
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 0 12px rgba(37, 99, 235, 0.08);
+}
+
+.form-control:hover:not(:focus) {
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Validation glow */
+.form-control.is-valid {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+.form-control.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    font-weight: 600;
+    color: var(--text-muted);
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Graph Section */
+.graph-container {
+    width: 100%;
+    height: 500px;
+    background: rgba(10, 15, 30, 0.6);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.4s ease;
+}
+
+.graph-container.graph-active {
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .graph-container {
+    background: rgba(241, 245, 249, 0.5);
+}
+
+.controls-panel {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+}
+
+.explanation-panel {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.04));
+    border-left: 4px solid var(--primary);
+    border-radius: 0 10px 10px 0;
+    min-height: 100px;
+    backdrop-filter: blur(6px);
+}
+
+/* Toast */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.toast {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px var(--shadow);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 4px solid var(--primary);
+    animation: slideIn 0.3s ease forwards;
+}
+
+.toast.success { border-color: var(--accent); }
+.toast.error { border-color: var(--danger); }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Utilities */
+.text-center { text-align: center; }
+.mt-4 { margin-top: 1.5rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        height: 100vh;
+        width: 250px;
+        transform: translateX(-100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+    }
+    
+    .sidebar:not(.collapsed) {
+        transform: translateX(0);
+        width: 250px;
+    }
+    
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+        width: 250px;
+    }
+    
+    #toggleSidebar {
+        display: block;
+    }
+    
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ─── Premium Electrical Machine Theme Extensions ─── */
+.developer-credit span {
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+/* Machine Visualizer Card */
+.machine-visualizer-card {
+    background: linear-gradient(145deg, var(--card-bg) 0%, rgba(30, 41, 59, 0.7) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px;
+    margin-top: 30px;
+    box-shadow: 0 10px 30px var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.machine-visualizer-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+}
+
+.machine-visualizer-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .machine-visualizer-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Alternator Animation Elements */
+.alternator-viewport {
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 16px;
+    height: 380px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(59, 130, 246, 0.05);
+}
+
+/* Futuristic HUD Overlays */
+.viewport-hud-grid {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: 
+        linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+    z-index: 0;
+}
+.viewport-hud-corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgba(59, 130, 246, 0.4);
+    border-style: solid;
+    pointer-events: none;
+}
+.viewport-hud-corner.vh-tl { top: 15px; left: 15px; border-width: 2px 0 0 2px; }
+.viewport-hud-corner.vh-tr { top: 15px; right: 15px; border-width: 2px 2px 0 0; }
+.viewport-hud-corner.vh-bl { bottom: 15px; left: 15px; border-width: 0 0 2px 2px; }
+.viewport-hud-corner.vh-br { bottom: 15px; right: 15px; border-width: 0 2px 2px 0; }
+
+.viewport-hud-ring {
+    position: absolute;
+    border: 1px dashed rgba(59, 130, 246, 0.12);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.viewport-hud-ring.vhr-1 {
+    width: 320px; height: 320px;
+    animation: ringSpin 60s linear infinite;
+}
+.viewport-hud-ring.vhr-2 {
+    width: 340px; height: 340px;
+    border-style: dotted;
+    animation: ringSpin 40s linear infinite reverse;
+}
+
+.viewport-hud-text {
+    position: absolute;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: rgba(59, 130, 246, 0.5);
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+.viewport-hud-text.vt-1 { top: 20px; left: 40px; }
+.viewport-hud-text.vt-2 { top: 20px; right: 40px; text-align: right; }
+.viewport-hud-text.vt-3 { bottom: 20px; right: 40px; text-align: right; }
+.viewport-hud-text.vt-4 { bottom: 20px; left: 40px; }
+
+/* Stator outer framework */
+.stator-outer {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    border: 4px double rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.12), inset 0 0 20px rgba(59, 130, 246, 0.08);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.3);
+}
+
+.stator-pole {
+    position: absolute;
+    width: 26px;
+    height: 38px;
+    background: linear-gradient(180deg, #1e293b 0%, #0b0f19 100%);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 6px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.6);
+}
+
+/* Winding coil wraps */
+.stator-pole::after {
+    content: '';
+    position: absolute;
+    top: 6px; left: 2px; right: 2px; bottom: 6px;
+    background: repeating-linear-gradient(0deg, #b45309, #b45309 2px, transparent 2px, transparent 4px);
+    border-radius: 2px;
+    opacity: 0.8;
+}
+
+.stator-pole::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 18px;
+    border-radius: 4px;
+    z-index: 2;
+    transition: var(--transition);
+}
+
+/* Three-phase color glow coils */
+.stator-pole.phase-a {
+    top: 4px;
+    left: calc(50% - 13px);
+}
+.stator-pole.phase-a::before {
+    background: #ef4444; /* Phase A - Neon Red */
+    box-shadow: 0 0 20px #ef4444, 0 0 40px rgba(239, 68, 68, 0.4);
+    animation: pulse-red 2s infinite ease-in-out;
+}
+
+.stator-pole.phase-b {
+    bottom: 32px;
+    right: 32px;
+    transform: rotate(120deg);
+}
+.stator-pole.phase-b::before {
+    background: #eab308; /* Phase B - Neon Yellow */
+    box-shadow: 0 0 20px #eab308, 0 0 40px rgba(234, 179, 8, 0.4);
+    animation: pulse-yellow 2s infinite ease-in-out;
+    animation-delay: 0.66s;
+}
+
+.stator-pole.phase-c {
+    bottom: 32px;
+    left: 32px;
+    transform: rotate(240deg);
+}
+.stator-pole.phase-c::before {
+    background: #3b82f6; /* Phase C - Neon Blue */
+    box-shadow: 0 0 20px #3b82f6, 0 0 40px rgba(59, 130, 246, 0.4);
+    animation: pulse-blue 2s infinite ease-in-out;
+    animation-delay: 1.33s;
+}
+
+@keyframes pulse-red {
+    0%, 100% { filter: brightness(0.65) saturate(0.8); }
+    50% { filter: brightness(1.4) saturate(1.2); }
+}
+@keyframes pulse-yellow {
+    0%, 100% { filter: brightness(0.65) saturate(0.8); }
+    50% { filter: brightness(1.4) saturate(1.2); }
+}
+@keyframes pulse-blue {
+    0%, 100% { filter: brightness(0.65) saturate(0.8); }
+    50% { filter: brightness(1.4) saturate(1.2); }
+}
+
+.rotor-outer {
+    width: 154px;
+    height: 154px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: rotate(0deg);
+    transition: transform 0.05s linear;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+}
+
+.rotor-shaft {
+    width: 42px;
+    height: 42px;
+    background: radial-gradient(circle, #f8fafc 0%, #8b5cf6 55%, #1e1b4b 100%);
+    border: 2px solid #a78bfa;
+    border-radius: 50%;
+    position: relative;
+    z-index: 5;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.3);
+}
+
+.rotor-pole-n, .rotor-pole-s {
+    position: absolute;
+    width: 52px;
+    height: 62px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 900;
+    font-size: 1.15rem;
+    font-family: 'Orbitron', sans-serif;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+    z-index: 2;
+    letter-spacing: 1px;
+}
+
+.rotor-pole-n {
+    top: 4px;
+    background: linear-gradient(180deg, #ef4444 0%, #991b1b 100%);
+    border-radius: 12px 12px 2px 2px;
+    border: 1.5px solid #f87171;
+    border-bottom: none;
+    box-shadow: 0 -4px 15px rgba(239, 68, 68, 0.35);
+}
+
+.rotor-pole-s {
+    bottom: 4px;
+    background: linear-gradient(180deg, #1e40af 0%, #3b82f6 100%);
+    border-radius: 2px 2px 12px 12px;
+    border: 1.5px solid #60a5fa;
+    border-top: none;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+}
+
+.rotor-flux-lines {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border: 2px dashed rgba(239, 68, 68, 0.25);
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events: none;
+    animation: ringSpin 12s linear infinite;
+}
+
+.rotor-flux-lines::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px;
+    height: 180px;
+    border: 2px dashed rgba(59, 130, 246, 0.25);
+    border-radius: 50%;
+    animation: ringSpin 8s linear infinite reverse;
+}
+
+.machine-visualizer-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+}
+
+.control-item-panel {
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtle glowing accent line on top of slider panels */
+.control-item-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.control-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.control-item-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+}
+
+.control-item-value {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    color: #00f0ff; /* Bright Cyan Tech Color */
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.alternator-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(51, 65, 85, 0.6);
+    outline: none;
+    margin-top: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.alternator-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #00f0ff;
+    cursor: pointer;
+    box-shadow: 0 0 12px #00f0ff, 0 0 20px rgba(0, 240, 255, 0.4);
+    border: 2px solid #fff;
+    transition: var(--transition);
+}
+
+.alternator-slider::-webkit-slider-thumb:hover {
+    background: #8b5cf6;
+    box-shadow: 0 0 12px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.4);
+    transform: scale(1.15);
+}
+
+.machine-readouts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.readout-card {
+    background: rgba(8, 12, 24, 0.85);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 14px;
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.06), 0 6px 20px rgba(0, 0, 0, 0.4);
+    transition: var(--transition);
+}
+
+.readout-card:hover {
+    border-color: rgba(16, 185, 129, 0.45);
+    box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.1), 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Sci-fi overlay scanlines and grid on readout cards */
+.readout-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+}
+
+.readout-title {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.readout-value {
+    font-size: 1.65rem;
+    font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+    color: #10b981;
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+/* Neon blue alternative for frequency */
+.readout-card:last-child .readout-value {
+    color: #3b82f6;
+    text-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+}
+
+.telemetry-waveform {
+    width: 100%;
+    height: 40px;
+    margin-top: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border-top: 1px solid rgba(255,255,255,0.03);
+    display: block;
+}
+
+.glow-btn-pulse {
+    animation: button-pulse 2s infinite ease-in-out;
+}
+
+@keyframes button-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+}
+
+/* ─── Premium Electrical Machine Lab UI Styles ─── */
+
+/* Subtle noise texture on glassmorphism cards */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
+    background-size: 6px 6px;
+    pointer-events: none;
+    border-radius: 14px;
+    z-index: 0;
+}
+
+.card > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ─── Dashboard Experiment Cards (shimmer hover) ─── */
+.experiment-card {
+    overflow: hidden;
+}
+
+.experiment-card::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(
+        115deg,
+        transparent 20%,
+        rgba(59, 130, 246, 0.04) 40%,
+        rgba(139, 92, 246, 0.06) 50%,
+        rgba(59, 130, 246, 0.04) 60%,
+        transparent 80%
+    );
+    transform: translateX(-100%) rotate(0deg);
+    transition: transform 0.8s ease;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.experiment-card:hover::after {
+    transform: translateX(40%) rotate(0deg);
+}
+
+.experiment-badge {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* LED Status Indicator */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(15, 23, 42, 0.6);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-family: 'Orbitron', monospace;
+    text-transform: uppercase;
+}
+
+.led-light {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    display: inline-block;
+}
+
+.led-light.pulsing {
+    animation: led-glow 1.5s infinite ease-in-out;
+}
+
+.led-light.ready { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+.led-light.busy { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+.led-light.paused { background-color: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+.led-light.off { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+@keyframes led-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; filter: brightness(1.3); }
+}
+
+/* Digital style for calculations and results */
+#calculationsText, #timer, #currentQ, #totalQ {
+    font-family: 'Inter', sans-serif;
+}
+
+.digital-readout {
+    font-family: 'Orbitron', monospace !important;
+    color: #10b981;
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+/* ─── Phasor Canvas Panel ─────────────────────────── */
+#phasorCard {
+    animation: fadeInUp 0.5s ease;
+}
+
+#phasorCanvas {
+    display: block;
+    max-width: 100%;
+    border: 1px solid var(--border);
+    background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.04) 0%, rgba(0,0,0,0.35) 100%);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.08) inset;
+}
+
+#phasorLegend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.04);
+    font-size: 0.8rem;
+}
+
+/* ─── Formula Panel ───────────────────────────────── */
+#formulaPanel {
+    animation: fadeInUp 0.4s ease 0.1s both;
+    transition: var(--transition);
+}
+
+#formulaText strong {
+    letter-spacing: 0.3px;
+}
+
+[data-theme="light"] #formulaPanel {
+    background: rgba(0,0,0,0.04);
+    border-left-color: var(--primary);
+}
+
+[data-theme="light"] #formulaText {
+    color: var(--text-main);
+}
+
+/* ─── Per-Unit Panel ──────────────────────────────── */
+#puPanel {
+    animation: fadeInUp 0.4s ease 0.15s both;
+}
+
+#puText span {
+    display: block;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.85rem;
+}
+
+#puText strong {
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-right: 6px;
+}
+
+[data-theme="light"] #puPanel {
+    background: rgba(0,0,0,0.03);
+}
+
+/* ─── Regulation Gauge ────────────────────────────── */
+#regGauge {
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.2));
+    transition: all 0.6s ease;
+}
+
+#gaugeLabel {
+    text-align: center;
+    line-height: 1.3;
+    letter-spacing: 0.5px;
+}
+
+/* ─── Results card layout ─────────────────────────── */
+#resultsCard {
+    animation: fadeInUp 0.5s ease;
+}
+
+#resultsCard hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 8px 0;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── led running state ───────────────────────────── */
+.led-light.running {
+    background-color: #10b981;
+    box-shadow: 0 0 10px #10b981;
+    animation: led-glow 0.9s infinite ease-in-out;
+}
+
+.led-light.error {
+    background-color: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+    animation: led-glow 0.4s infinite ease-in-out;
+}
+
+
+/* ─── Synchronous Motor Part Inspector & Encyclopedia ─── */
+.motor-inspector-card {
+    border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.motor-inspector-layout {
+    display: grid;
+    grid-template-columns: 240px 320px 1fr;
+    gap: 25px;
+    width: 100%;
+    margin-top: 15px;
+}
+
+@media (max-width: 1100px) {
+    .motor-inspector-layout {
+        grid-template-columns: 240px 1fr;
+    }
+    .motor-details-pane {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .motor-inspector-layout {
+        grid-template-columns: 1fr;
+    }
+    .motor-details-pane {
+        grid-column: span 1;
+    }
+}
+
+/* Part Selection List */
+.motor-parts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+    height: 380px;
+    overflow-y: auto;
+}
+
+.parts-list-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.part-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-left: 3px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    transition: var(--transition);
+}
+
+.part-item i {
+    width: 16px;
+    font-size: 0.95rem;
+    text-align: center;
+    color: var(--primary);
+    transition: var(--transition);
+}
+
+.part-item:hover {
+    color: var(--text-main);
+    background: rgba(59, 130, 246, 0.08);
+    border-left-color: rgba(59, 130, 246, 0.5);
+    transform: translateX(4px);
+}
+
+.part-item.active {
+    color: #fff;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), transparent);
+    border-left-color: var(--accent);
+    border-top: 1px solid rgba(16, 185, 129, 0.1);
+    border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+    box-shadow: inset 4px 0 10px rgba(16, 185, 129, 0.1);
+}
+
+.part-item.active i {
+    color: var(--accent);
+    filter: drop-shadow(0 0 4px var(--accent));
+}
+
+/* SVG Schematic Viewport */
+.motor-svg-viewport {
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 16px;
+    height: 380px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(16, 185, 129, 0.03);
+}
+
+/* SVG Interactive Parts */
+.motor-svg-part {
+    cursor: pointer;
+    transition: all 0.35s ease;
+    opacity: 0.65;
+}
+
+.motor-svg-part:hover {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.7));
+}
+
+.motor-svg-part.svg-highlighted {
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.85)) !important;
+}
+
+/* Highlight focusing logic using :has() */
+#synchronousMotorSvg:has(.svg-highlighted) .motor-svg-part:not(.svg-highlighted) {
+    opacity: 0.25;
+}
+
+#synchronousMotorSvg:has(.svg-highlighted) .motor-svg-part:not(.svg-highlighted):hover {
+    opacity: 0.75;
+}
+
+/* Damper bars and copper windings styling */
+.damper-bar {
+    transition: all 0.3s ease;
+}
+.motor-svg-part.svg-highlighted .damper-bar {
+    fill: #00f0ff;
+    stroke: #fff;
+    filter: drop-shadow(0 0 3px #00f0ff);
+}
+
+.phase-coil {
+    transition: all 0.3s ease;
+}
+.motor-svg-part.svg-highlighted .phase-coil {
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.8));
+}
+
+/* HUD details panel */
+.motor-details-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.motor-details-hud {
+    background: rgba(8, 12, 24, 0.85);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 16px;
+    padding: 22px;
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.03), 0 8px 30px rgba(0, 0, 0, 0.4);
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Sci-fi overlay scanlines and grid on details HUD */
+.motor-details-hud::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.hud-top-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    z-index: 2;
+}
+
+.hud-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+}
+
+.hud-status-led {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.hud-status-led .led-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+}
+
+.hud-part-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+    z-index: 2;
+}
+
+.hud-divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, rgba(16, 185, 129, 0.2) 60%, transparent 100%);
+    margin-bottom: 15px;
+    z-index: 2;
+}
+
+.hud-detail-group {
+    z-index: 2;
+}
+
+.hud-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+}
+
+.hud-value-highlight {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+    line-height: 1.4;
+}
+
+.hud-value-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    text-align: justify;
+}
+
+/* High-tech Formula Display Card */
+.hud-formula-card {
+    background: rgba(0, 0, 0, 0.4);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px 10px 10px 4px;
+    padding: 10px 15px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    z-index: 2;
+    box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.05);
+}
+
+.formula-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.formula-math-display {
+    font-size: 1.05rem;
+    color: #fff;
+    font-family: 'Times New Roman', Times, serif;
+    padding: 4px 0;
+}
+
+/* Oscilloscope Telemetry Panel */
+.hud-animation-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 2;
+}
+
+.animation-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.animation-viewport-frame {
+    background: #020617;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.part-scope-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Pulse animation for title icon */
+@keyframes pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 2px var(--accent)); opacity: 0.8; }
+    50% { filter: drop-shadow(0 0 8px var(--accent)); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════
+   MOTOR INSPECTOR ZOOM & VISUAL MODES EXTENSIONS
+   ═══════════════════════════════════════════════════ */
+.viewport-controls-overlay {
+    display: flex;
+    gap: 6px;
+}
+
+.view-mode-btn {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    font-size: 0.7rem;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.view-mode-btn i {
+    font-size: 0.8rem;
+    color: var(--primary);
+}
+
+.view-mode-btn:hover {
+    color: #fff;
+    border-color: var(--accent);
+    background: rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.view-mode-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+}
+
+.view-mode-btn.active i {
+    color: #fff;
+}
+
+.reset-zoom-btn {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    font-family: 'Orbitron', sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.reset-zoom-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+/* SVG Part Base Transition */
+.motor-svg-part {
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease, filter 0.35s ease;
+    transform-origin: 160px 160px;
+}
+
+/* X-Ray Mode Styling */
+#synchronousMotorSvg.xray-active #svg-frame,
+#synchronousMotorSvg.xray-active #svg-rotor-core {
+    opacity: 0.12;
+}
+
+#synchronousMotorSvg.xray-active #svg-frame circle,
+#synchronousMotorSvg.xray-active #svg-rotor-core circle,
+#synchronousMotorSvg.xray-active #svg-rotor-core rect,
+#synchronousMotorSvg.xray-active #svg-rotor-core path {
+    stroke: rgba(0, 240, 255, 0.4) !important;
+    stroke-dasharray: 2, 2;
+}
+
+#synchronousMotorSvg.xray-active .motor-svg-part:not(#svg-frame):not(#svg-rotor-core) {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 6px var(--accent));
+}
+
+/* Exploded Layer Assembly Mode */
+#synchronousMotorSvg.exploded-active #svg-frame {
+    transform: scale(1.15);
+}
+
+#synchronousMotorSvg.exploded-active #svg-stator-core {
+    transform: scale(1.08);
+}
+
+#synchronousMotorSvg.exploded-active #svg-windings {
+    transform: scale(1.08);
+}
+
+#synchronousMotorSvg.exploded-active #svg-rotor-core {
+    transform: scale(1.04);
+}
+
+#synchronousMotorSvg.exploded-active #svg-field-coils {
+    transform: scale(1.13);
+}
+
+#synchronousMotorSvg.exploded-active #svg-damper-windings {
+    transform: scale(1.18);
+}
+
+#synchronousMotorSvg.exploded-active #svg-slip-rings {
+    transform: translate(12px, 12px) scale(0.95);
+}
+
+#synchronousMotorSvg.exploded-active #svg-shaft {
+    transform: scale(0.85);
+}
+
+/* Zoom-only Microscopic Details */
+.zoom-only-detail {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+#synchronousMotorSvg[data-zoomed-part="stator-core"] #detail-stator-core,
+#synchronousMotorSvg[data-zoomed-part="frame"] #detail-frame,
+#synchronousMotorSvg[data-zoomed-part="rotor-core"] #detail-rotor-core,
+#synchronousMotorSvg[data-zoomed-part="field-coils"] #detail-field-coils,
+#synchronousMotorSvg[data-zoomed-part="damper-windings"] #detail-damper-windings,
+#synchronousMotorSvg[data-zoomed-part="shaft"] #detail-shaft,
+#synchronousMotorSvg[data-zoomed-part="slip-rings"] #detail-slip-rings {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Callout markings inside SVG */
+.callout-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 3.5px;
+    fill: #00f0ff;
+    text-shadow: 0 0 2px rgba(0, 240, 255, 0.8);
+    pointer-events: none;
+}
+
+.callout-line {
+    stroke: #00f0ff;
+    stroke-width: 0.35;
+    stroke-dasharray: 1, 1;
+    pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   MOTOR INSPECTOR TABS & INDUSTRIAL CUTAWAY EXTENSIONS
+   ═══════════════════════════════════════════════════ */
+.motor-tabs-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.tab-content {
+    display: none;
+    width: 100%;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Industrial Viewport styles */
+.industrial-viewport {
+    width: 100%;
+    height: 500px;
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.85);
+}
+
+/* Industrial SVG parts styling */
+#industrialMotorSvg .motor-svg-part {
+    transition: transform 0.65s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease, filter 0.35s ease;
+    transform-origin: 400px 225px; /* Centered around Stator core */
+}
+
+/* Hover effect on clickable industrial parts */
+#industrialMotorSvg .motor-svg-part:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.8));
+    opacity: 0.95;
+}
+
+/* Highlight style when selected */
+#industrialMotorSvg .motor-svg-part.svg-highlighted {
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.95)) !important;
+}
+
+/* Industrial Sidebar styling */
+.industrial-hud-sidebar {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 330px;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(18px) saturate(1.7);
+    -webkit-backdrop-filter: blur(18px) saturate(1.7);
+    border-left: 1px solid rgba(59, 130, 246, 0.25);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 15px;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.6);
+    z-index: 20;
+    transform: translateX(105%);
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: auto;
+}
+
+.industrial-hud-sidebar.sidebar-open {
+    transform: translateX(0) !important;
+}
+
+.close-sidebar-btn:hover {
+    color: var(--danger) !important;
+    transform: scale(1.15);
+}
+
+/* X-Ray Casing Transparency mode for Industrial SVG */
+#industrialMotorSvg.xray-active #ind-frame {
+    opacity: 0.12;
+}
+
+#industrialMotorSvg.xray-active #ind-frame path,
+#industrialMotorSvg.xray-active #ind-frame rect {
+    stroke: rgba(0, 240, 255, 0.4) !important;
+    stroke-dasharray: 2, 2;
+}
+
+#industrialMotorSvg.xray-active .motor-svg-part:not(#ind-frame) {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 6px var(--accent));
+}
+
+/* ═══════════════════════════════════════════════════
+   FULLSCREEN INSPECTION STYLES
+   ═══════════════════════════════════════════════════ */
+.maximize-btn {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    color: var(--text-muted);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.maximize-btn:hover {
+    color: #fff;
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    transform: scale(1.05);
+}
+
+.layout-maximized {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    background: radial-gradient(circle at center, #0a0f1e 0%, #020617 100%) !important;
+    padding: 30px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Schematic layout adjustments when maximized */
+.motor-inspector-layout.layout-maximized {
+    display: flex !important;
+    gap: 30px !important;
+}
+
+.motor-inspector-layout.layout-maximized .motor-parts-list {
+    width: 260px !important;
+    flex-shrink: 0 !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(59, 130, 246, 0.15) !important;
+    border-radius: 12px !important;
+    z-index: 100000 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+}
+
+.motor-inspector-layout.layout-maximized .motor-svg-viewport {
+    flex-grow: 1 !important;
+    height: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.motor-inspector-layout.layout-maximized .motor-details-pane {
+    width: 380px !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    z-index: 100000 !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    border-radius: 14px !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+}
+
+/* Industrial viewport adjustment when maximized */
+.industrial-viewport.layout-maximized {
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+.industrial-viewport.layout-maximized svg {
+    width: 100% !important;
+    height: 100% !important;
+}
+

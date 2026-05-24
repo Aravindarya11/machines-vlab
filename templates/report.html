@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Report | EMVL{% endblock %}
+{% block page_title %}Experiment Reports{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; text-align: center;">
+    <i class="fa-solid fa-file-contract" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
+    <h3 style="margin-bottom: 15px;">Experiment Reports</h3>
+    <p style="color: var(--text-muted); margin-bottom: 30px; line-height: 1.6;">
+        Reports are generated dynamically after you complete an experiment. 
+        Please go to the EMF, MMF, or ZPF method pages, run the simulation with your data, 
+        and click the "Download Report" button at the end of the calculations.
+    </p>
+    
+    <div style="display: flex; gap: 15px; justify-content: center;">
+        <a href="{{ url_for('emf') }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Run EMF Exp</a>
+        <a href="{{ url_for('mmf') }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Run MMF Exp</a>
+        <a href="{{ url_for('zpf') }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Run ZPF Exp</a>
+    </div>
+</div>
+{% endblock %}

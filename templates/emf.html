@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}EMF Method | EMVL{% endblock %}
+{% block page_title %}EMF (Synchronous Impedance) Method{% endblock %}
+
+{% block content %}
+<div class="grid-container" style="grid-template-columns: 350px 1fr;">
+    <!-- Input Section -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <h3 class="card-title" style="margin: 0; font-size: 1.15rem;"><i class="fa-solid fa-keyboard"></i> Data Input</h3>
+            <div class="status-indicator">
+                <span class="led-light ready" id="statusLed"></span> <span id="statusText">READY</span>
+            </div>
+        </div>
+        
+        <div class="tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button class="btn btn-primary" id="tabManual" style="flex: 1;">Manual Entry</button>
+            <button class="btn btn-secondary" id="tabCSV" style="flex: 1;">Upload CSV</button>
+        </div>
+
+        <div id="manualInputSection">
+            <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">OCC Data (Comma separated)</h4>
+            <div class="form-group">
+                <label class="form-label">Field Current (If) in Amps</label>
+                <input type="text" class="form-control" id="occIf" value="0.2, 0.4, 0.6, 0.8, 1.0, 1.2" placeholder="e.g. 0.2, 0.4, 0.6">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Open Circuit Voltage (Voc) in Volts</label>
+                <input type="text" class="form-control" id="occVoc" value="85, 170, 240, 285, 315, 335" placeholder="e.g. 85, 170, 240">
+            </div>
+
+            <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">SCC Data</h4>
+            <div class="form-group">
+                <label class="form-label">Field Current (If) in Amps</label>
+                <input type="text" class="form-control" id="sccIf" value="0.2, 0.4, 0.6" placeholder="e.g. 0.2, 0.4, 0.6">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Short Circuit Current (Isc) in Amps</label>
+                <input type="text" class="form-control" id="sccIsc" value="3.5, 7.0, 10.5" placeholder="e.g. 3.5, 7.0, 10.5">
+            </div>
+        </div>
+
+        <div id="csvInputSection" style="display: none;">
+            <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">Upload CSV Data</h4>
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-file-csv" style="color: var(--primary);"></i> 1. OCC Data CSV</label>
+                <input type="file" class="form-control" id="occCsvFileInput" accept=".csv">
+                <small style="color: var(--text-muted); display: block; margin-top: 5px;">Expected columns: Field Current (If), Open Circuit Voltage (Voc)</small>
+                <div id="occCsvStatus" style="font-size: 0.85rem; color: #10b981; margin-top: 5px; display: none;">
+                    <i class="fa-solid fa-circle-check"></i> OCC data loaded (0 rows)
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label class="form-label"><i class="fa-solid fa-file-csv" style="color: var(--accent);"></i> 2. SCC Data CSV</label>
+                <input type="file" class="form-control" id="sccCsvFileInput" accept=".csv">
+                <small style="color: var(--text-muted); display: block; margin-top: 5px;">Expected columns: Field Current (If), Short Circuit Current (Isc)</small>
+                <div id="sccCsvStatus" style="font-size: 0.85rem; color: #10b981; margin-top: 5px; display: none;">
+                    <i class="fa-solid fa-circle-check"></i> SCC data loaded (0 rows)
+                </div>
+            </div>
+        </div>
+
+        <h4 style="margin: 15px 0 10px 0; color: var(--text-muted); font-size: 0.9rem;">Machine Parameters</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label class="form-label">Rated Voltage (V)</label>
+                    <input type="number" class="form-control" id="ratedV" value="415">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rated Current (A)</label>
+                    <input type="number" class="form-control" id="ratedI" value="4.2">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Armature Res (Ra) Ω</label>
+                    <input type="number" class="form-control" id="ra" value="1.2">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Power Factor (pf)</label>
+                    <input type="number" class="form-control" id="pf" value="0.8" step="0.1" min="0" max="1">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">PF Type</label>
+                    <select class="form-control" id="pfType">
+                        <option value="lagging">Lagging</option>
+                        <option value="leading">Leading</option>
+                        <option value="unity">Unity</option>
+                    </select>
+                </div>
+            </div>
+        
+        <button class="btn btn-success" id="btnStart" style="width: 100%; margin-top: 10px;">
+            <i class="fa-solid fa-play"></i> Start Animation
+        </button>
+    </div>
+
+    <!-- Graph & Animation Section -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 10px;">
+            <div id="emfGraph" class="graph-container"></div>
+            
+            <div class="controls-panel">
+                <button class="btn btn-secondary btn-icon" id="btnPause" title="Pause"><i class="fa-solid fa-pause"></i></button>
+                <button class="btn btn-secondary btn-icon" id="btnResume" title="Resume"><i class="fa-solid fa-play"></i></button>
+                <button class="btn btn-secondary btn-icon" id="btnReset" title="Reset"><i class="fa-solid fa-rotate-right"></i></button>
+                
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                    <label style="color: var(--text-muted); font-size: 0.9rem;">Animation Speed:</label>
+                    <input type="range" id="speedSlider" min="1" max="10" value="5" style="width: 100px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title"><i class="fa-solid fa-person-chalkboard"></i> Construction Steps</h3>
+            <div class="explanation-panel" id="explanationText">
+                Welcome to the EMF Method simulation. Enter the experimental data on the left and click "Start Animation" to begin the step-by-step construction of the graph.
+            </div>
+        </div>
+
+        <!-- Phasor Diagram Panel -->
+        <div class="card" id="phasorCard" style="display: none;">
+            <h3 class="card-title"><i class="fa-solid fa-diagram-project"></i> Voltage Phasor Diagram</h3>
+            <div style="display: flex; justify-content: center; align-items: center; padding: 10px;">
+                <canvas id="phasorCanvas" width="520" height="300" style="border-radius: 8px; background: rgba(0,0,0,0.3);"></canvas>
+            </div>
+            <div id="phasorLegend" style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-top: 12px; font-size: 0.85rem;"></div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card" id="resultsCard" style="display: none;">
+            <h3 class="card-title"><i class="fa-solid fa-calculator"></i> Results &amp; Calculations</h3>
+            
+            <!-- Gauge + Key Params row -->
+            <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 20px;">
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <svg id="regGauge" width="200" height="120" viewBox="0 0 200 120"></svg>
+                    <div id="gaugeLabel" style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-top: -8px;"></div>
+                </div>
+                <div id="calculationsText" style="flex: 1; line-height: 2; min-width: 240px;"></div>
+            </div>
+
+            <!-- Formula Panel -->
+            <div id="formulaPanel" style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 14px; margin-bottom: 14px; border-left: 3px solid var(--primary);">
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 1px;">APPLIED FORMULA</div>
+                <div id="formulaText" style="font-family: 'Courier New', monospace; font-size: 0.88rem; line-height: 1.7; color: var(--text-main);"></div>
+            </div>
+
+            <!-- Per-Unit Values -->
+            <div id="puPanel" style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 1px;">PER-UNIT VALUES</div>
+                <div id="puText" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; font-size: 0.88rem; line-height: 1.8;"></div>
+            </div>
+
+            <button class="btn btn-primary mt-4" id="btnDownloadReport"><i class="fa-solid fa-download"></i> Download Report</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/emfGraph.js') }}"></script>
+{% endblock %}
