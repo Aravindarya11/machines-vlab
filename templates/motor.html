@@ -3,6 +3,109 @@
 {% block title %}Motor Inspector | EMVL{% endblock %}
 {% block page_title %}Synchronous Motor Inspector{% endblock %}
 
+{% block head %}
+<style>
+/* Custom styles for Motor Inspector controls */
+.motor-controls-overlay {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px) saturate(1.8);
+    -webkit-backdrop-filter: blur(12px) saturate(1.8);
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    transition: var(--transition);
+}
+
+.motor-run-btn {
+    background: var(--primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.motor-run-btn:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+    transform: translateY(-1px);
+}
+
+.motor-run-btn.running {
+    background: rgba(239, 68, 68, 0.8);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.motor-run-btn.running:hover {
+    background: rgba(220, 38, 38, 0.9);
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+}
+
+.motor-status-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.motor-status-led {
+    width: 10px;
+    height: 10px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ef4444;
+    transition: all 0.3s ease;
+}
+
+.motor-status-led.running {
+    background-color: #10b981;
+    box-shadow: 0 0 10px #10b981, 0 0 20px rgba(16, 185, 129, 0.5);
+    animation: led-pulse 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes led-pulse {
+    0% {
+        box-shadow: 0 0 6px #10b981, 0 0 12px rgba(16, 185, 129, 0.3);
+        opacity: 0.8;
+    }
+    100% {
+        box-shadow: 0 0 12px #10b981, 0 0 24px rgba(16, 185, 129, 0.7);
+        opacity: 1;
+    }
+}
+
+[data-theme="light"] .motor-controls-overlay {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .motor-run-btn {
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- ─── Interactive Synchronous Motor Part Inspector & Encyclopedia Section ─── -->
 <div class="machine-visualizer-card motor-inspector-card" style="margin-top: 10px; margin-bottom: 20px;">
@@ -46,6 +149,16 @@
             <button class="maximize-btn" id="schematicMaximize" title="Toggle Fullscreen" style="position: absolute; top: 15px; right: 15px; z-index: 10;"><i class="fa-solid fa-expand"></i></button>
             <button class="reset-zoom-btn" id="resetZoom" title="Reset Viewport" style="position: absolute; bottom: 15px; right: 15px; z-index: 10; display: none;"><i class="fa-solid fa-maximize"></i> Reset View</button>
 
+            <!-- Motor Run/Stop Control Panel overlay -->
+            <div class="motor-controls-overlay">
+                <button class="motor-run-btn" id="motorRunToggleBtn" title="Run/Stop Motor Simulation">
+                    <i class="fa-solid fa-play"></i> <span>RUN MOTOR</span>
+                </button>
+                <div class="motor-status-display">
+                    <span class="motor-status-led" id="motorStatusLed"></span>
+                    <span id="motorStatusText">STOPPED</span>
+                </div>
+            </div>
 
             <svg id="synchronousMotorSvg" viewBox="0 0 320 320" width="100%" height="100%">
                 <defs>
@@ -108,63 +221,66 @@
                     <circle cx="100" cy="56" r="5" fill="#3b82f6" stroke="#60a5fa" stroke-width="1" class="phase-coil" />
                 </g>
 
-                <!-- Field Windings (Coils wound on rotor salient poles) -->
-                <g class="motor-svg-part" id="svg-field-coils" data-part="field-coils">
-                    <!-- Top Pole Coils -->
-                    <rect x="133" y="62" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <rect x="177" y="62" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <!-- Bottom Pole Coils -->
-                    <rect x="133" y="230" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <rect x="177" y="230" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <!-- Left Pole Coils -->
-                    <rect x="62" y="133" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <rect x="62" y="177" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <!-- Right Pole Coils -->
-                    <rect x="230" y="133" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                    <rect x="230" y="177" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
-                </g>
+                <!-- Rotating Rotor Assembly -->
+                <g id="schematicRotorAssembly" style="transform-origin: 160px 160px; transition: transform 0.05s linear;">
+                    <!-- Field Windings (Coils wound on rotor salient poles) -->
+                    <g class="motor-svg-part" id="svg-field-coils" data-part="field-coils">
+                        <!-- Top Pole Coils -->
+                        <rect x="133" y="62" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <rect x="177" y="62" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <!-- Bottom Pole Coils -->
+                        <rect x="133" y="230" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <rect x="177" y="230" width="10" height="28" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <!-- Left Pole Coils -->
+                        <rect x="62" y="133" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <rect x="62" y="177" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <!-- Right Pole Coils -->
+                        <rect x="230" y="133" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                        <rect x="230" y="177" width="28" height="10" rx="2" fill="#b45309" stroke="#ea580c" stroke-width="1" />
+                    </g>
 
-                <!-- Rotor Core (4 Salient Poles) -->
-                <g class="motor-svg-part" id="svg-rotor-core" data-part="rotor-core">
-                    <!-- Shaft hub -->
-                    <circle cx="160" cy="160" r="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1.5" />
-                    <!-- Salient pole bodies -->
-                    <rect x="143" y="60" width="34" height="40" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <rect x="143" y="220" width="34" height="40" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <rect x="60" y="143" width="40" height="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <rect x="220" y="143" width="40" height="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <!-- Curved Pole Shoes -->
-                    <path d="M 125 60 C 125 60, 160 50, 195 60 L 190 68 L 130 68 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <path d="M 125 260 C 125 260, 160 270, 195 260 L 190 252 L 130 252 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <path d="M 60 125 C 60 125, 50 160, 60 195 L 68 190 L 68 130 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                    <path d="M 260 125 C 260 125, 270 160, 260 195 L 252 190 L 252 130 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
-                </g>
+                    <!-- Rotor Core (4 Salient Poles) -->
+                    <g class="motor-svg-part" id="svg-rotor-core" data-part="rotor-core">
+                        <!-- Shaft hub -->
+                        <circle cx="160" cy="160" r="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1.5" />
+                        <!-- Salient pole bodies -->
+                        <rect x="143" y="60" width="34" height="40" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <rect x="143" y="220" width="34" height="40" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <rect x="60" y="143" width="40" height="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <rect x="220" y="143" width="40" height="34" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <!-- Curved Pole Shoes -->
+                        <path d="M 125 60 C 125 60, 160 50, 195 60 L 190 68 L 130 68 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <path d="M 125 260 C 125 260, 160 270, 195 260 L 190 252 L 130 252 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <path d="M 60 125 C 60 125, 50 160, 60 195 L 68 190 L 68 130 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                        <path d="M 260 125 C 260 125, 270 160, 260 195 L 252 190 L 252 130 Z" fill="url(#rotorGrad)" stroke="#475569" stroke-width="1" />
+                    </g>
 
-                <!-- Damper Windings (Amortisseur copper bars inside pole shoes) -->
-                <g class="motor-svg-part" id="svg-damper-windings" data-part="damper-windings">
-                    <!-- Top pole shoe bars -->
-                    <circle cx="138" cy="62" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="160" cy="59" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="182" cy="62" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <!-- Bottom pole shoe bars -->
-                    <circle cx="138" cy="258" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="160" cy="261" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="182" cy="258" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <!-- Left pole shoe bars -->
-                    <circle cx="62" cy="138" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="59" cy="160" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="62" cy="182" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <!-- Right pole shoe bars -->
-                    <circle cx="258" cy="138" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="261" cy="160" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                    <circle cx="258" cy="182" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
-                </g>
+                    <!-- Damper Windings (Amortisseur copper bars inside pole shoes) -->
+                    <g class="motor-svg-part" id="svg-damper-windings" data-part="damper-windings">
+                        <!-- Top pole shoe bars -->
+                        <circle cx="138" cy="62" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="160" cy="59" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="182" cy="62" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <!-- Bottom pole shoe bars -->
+                        <circle cx="138" cy="258" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="160" cy="261" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="182" cy="258" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <!-- Left pole shoe bars -->
+                        <circle cx="62" cy="138" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="59" cy="160" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="62" cy="182" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <!-- Right pole shoe bars -->
+                        <circle cx="258" cy="138" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="261" cy="160" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                        <circle cx="258" cy="182" r="3" fill="#ea580c" stroke="#ffedd5" stroke-width="0.5" class="damper-bar" />
+                    </g>
 
-                <!-- Central Shaft -->
-                <g class="motor-svg-part" id="svg-shaft" data-part="shaft">
-                    <circle cx="160" cy="160" r="18" fill="url(#shaftGrad)" stroke="#475569" stroke-width="2" />
-                    <!-- keyway slot -->
-                    <rect x="156" y="142" width="8" height="6" fill="#334155" stroke="#475569" stroke-width="1" />
+                    <!-- Central Shaft -->
+                    <g class="motor-svg-part" id="svg-shaft" data-part="shaft">
+                        <circle cx="160" cy="160" r="18" fill="url(#shaftGrad)" stroke="#475569" stroke-width="2" />
+                        <!-- keyway slot -->
+                        <rect x="156" y="142" width="8" height="6" fill="#334155" stroke="#475569" stroke-width="1" />
+                    </g>
                 </g>
 
                 <!-- Slip Rings Inset box (telemetry detailed view) -->
@@ -680,6 +796,38 @@
 
         let currentAnimationType = 'rmf';
         let animationPhase = 0;
+        let isMotorRunning = false;
+
+        const motorRunToggleBtn = document.getElementById('motorRunToggleBtn');
+        const motorStatusLed = document.getElementById('motorStatusLed');
+        const motorStatusText = document.getElementById('motorStatusText');
+
+        if (motorRunToggleBtn) {
+            motorRunToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent SVG zoom clicks
+                isMotorRunning = !isMotorRunning;
+                
+                if (isMotorRunning) {
+                    motorRunToggleBtn.classList.add('running');
+                    motorRunToggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> <span>STOP MOTOR</span>';
+                    if (motorStatusLed) {
+                        motorStatusLed.classList.add('running');
+                    }
+                    if (motorStatusText) {
+                        motorStatusText.textContent = 'RUNNING';
+                    }
+                } else {
+                    motorRunToggleBtn.classList.remove('running');
+                    motorRunToggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RUN MOTOR</span>';
+                    if (motorStatusLed) {
+                        motorStatusLed.classList.remove('running');
+                    }
+                    if (motorStatusText) {
+                        motorStatusText.textContent = 'STOPPED';
+                    }
+                }
+            });
+        }
 
         // Coordinates mapping for zoom targets
         const zoomCoords = {
@@ -864,90 +1012,110 @@
             scopeCtx.lineWidth = 2;
             scopeCtx.shadowBlur = 4;
             
-            animationPhase += 0.05;
-            
-            if (currentAnimationType === 'rmf') {
-                // 3-Phase AC voltage waves
-                const colors = ['rgba(239, 68, 68, 0.8)', 'rgba(234, 179, 8, 0.8)', 'rgba(59, 130, 246, 0.8)'];
-                const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3];
+            if (isMotorRunning) {
+                animationPhase += 0.05;
+
+                // Rotate the schematic rotor assembly
+                const rotorAssembly = document.getElementById('schematicRotorAssembly');
+                if (rotorAssembly) {
+                    const angleDeg = (animationPhase * 180 / Math.PI) % 360;
+                    rotorAssembly.style.transform = `rotate(${angleDeg}deg)`;
+                }
                 
-                phases.forEach((p, index) => {
-                    scopeCtx.strokeStyle = colors[index];
-                    scopeCtx.shadowColor = colors[index];
+                if (currentAnimationType === 'rmf') {
+                    // 3-Phase AC voltage waves
+                    const colors = ['rgba(239, 68, 68, 0.8)', 'rgba(234, 179, 8, 0.8)', 'rgba(59, 130, 246, 0.8)'];
+                    const phases = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3];
+                    
+                    phases.forEach((p, index) => {
+                        scopeCtx.strokeStyle = colors[index];
+                        scopeCtx.shadowColor = colors[index];
+                        scopeCtx.beginPath();
+                        for (let x = 0; x < scopeCanvas.width; x++) {
+                            const y = scopeCanvas.height / 2 + Math.sin(x * 0.04 - animationPhase + p) * 16;
+                            if (x === 0) scopeCtx.moveTo(x, y);
+                            else scopeCtx.lineTo(x, y);
+                        }
+                        scopeCtx.stroke();
+                    });
+                } else if (currentAnimationType === 'dc') {
+                    // Flat line with high frequency ripple
+                    scopeCtx.strokeStyle = 'rgba(139, 92, 246, 0.85)';
+                    scopeCtx.shadowColor = 'rgba(139, 92, 246, 0.6)';
                     scopeCtx.beginPath();
                     for (let x = 0; x < scopeCanvas.width; x++) {
-                        const y = scopeCanvas.height / 2 + Math.sin(x * 0.04 - animationPhase + p) * 16;
+                        const y = (scopeCanvas.height / 2 - 8) + Math.sin(x * 0.5 + animationPhase * 2) * 1.5;
                         if (x === 0) scopeCtx.moveTo(x, y);
                         else scopeCtx.lineTo(x, y);
                     }
                     scopeCtx.stroke();
-                });
-            } else if (currentAnimationType === 'dc') {
-                // Flat line with high frequency ripple
-                scopeCtx.strokeStyle = 'rgba(139, 92, 246, 0.85)';
-                scopeCtx.shadowColor = 'rgba(139, 92, 246, 0.6)';
-                scopeCtx.beginPath();
-                for (let x = 0; x < scopeCanvas.width; x++) {
-                    const y = (scopeCanvas.height / 2 - 8) + Math.sin(x * 0.5 + animationPhase * 2) * 1.5;
-                    if (x === 0) scopeCtx.moveTo(x, y);
-                    else scopeCtx.lineTo(x, y);
+                } else if (currentAnimationType === 'damping') {
+                    // Damping exponential decay oscillation
+                    scopeCtx.strokeStyle = 'rgba(249, 115, 22, 0.85)';
+                    scopeCtx.shadowColor = 'rgba(249, 115, 22, 0.6)';
+                    scopeCtx.beginPath();
+                    
+                    for (let x = 0; x < scopeCanvas.width; x++) {
+                        const decay = Math.exp(-x * 0.01);
+                        const y = scopeCanvas.height / 2 + Math.sin(x * 0.15 - animationPhase * 3) * 22 * decay;
+                        if (x === 0) scopeCtx.moveTo(x, y);
+                        else scopeCtx.lineTo(x, y);
+                    }
+                    scopeCtx.stroke();
+                } else if (currentAnimationType === 'shaft') {
+                    // Square speed encoder pulses
+                    scopeCtx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
+                    scopeCtx.shadowColor = 'rgba(0, 240, 255, 0.6)';
+                    scopeCtx.beginPath();
+                    for (let x = 0; x < scopeCanvas.width; x++) {
+                        const term = Math.sin(x * 0.06 - animationPhase * 2);
+                        const y = scopeCanvas.height / 2 + (term >= 0 ? 15 : -15);
+                        if (x === 0) scopeCtx.moveTo(x, y);
+                        else scopeCtx.lineTo(x, y);
+                    }
+                    scopeCtx.stroke();
+                } else if (currentAnimationType === 'contacts') {
+                    // DC brush excitation ripple spikes
+                    scopeCtx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
+                    scopeCtx.shadowColor = 'rgba(16, 185, 129, 0.6)';
+                    scopeCtx.beginPath();
+                    for (let x = 0; x < scopeCanvas.width; x++) {
+                        const noise = Math.sin(x * 0.3 + animationPhase * 1.5) * 2 + Math.cos(x * 0.9 - animationPhase * 3) * 1;
+                        const y = (scopeCanvas.height / 2 - 5) + noise;
+                        if (x === 0) scopeCtx.moveTo(x, y);
+                        else scopeCtx.lineTo(x, y);
+                    }
+                    scopeCtx.stroke();
+                } else if (currentAnimationType === 'rotor') {
+                    // Pulsating magnetic flux poles
+                    scopeCtx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+                    scopeCtx.shadowColor = 'rgba(239, 68, 68, 0.5)';
+                    scopeCtx.beginPath();
+                    for (let x = 0; x < scopeCanvas.width; x++) {
+                        const y = scopeCanvas.height / 2 + Math.abs(Math.sin(x * 0.05 - animationPhase * 0.5)) * 20 - 10;
+                        if (x === 0) scopeCtx.moveTo(x, y);
+                        else scopeCtx.lineTo(x, y);
+                    }
+                    scopeCtx.stroke();
+                } else {
+                    // Grid/noise
+                    scopeCtx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+                    scopeCtx.shadowColor = 'rgba(59, 130, 246, 0.4)';
+                    scopeCtx.beginPath();
+                    for (let x = 0; x < scopeCanvas.width; x++) {
+                        const y = scopeCanvas.height / 2 + (Math.random() - 0.5) * 4;
+                        if (x === 0) scopeCtx.moveTo(x, y);
+                        else scopeCtx.lineTo(x, y);
+                    }
+                    scopeCtx.stroke();
                 }
-                scopeCtx.stroke();
-            } else if (currentAnimationType === 'damping') {
-                // Damping exponential decay oscillation
-                scopeCtx.strokeStyle = 'rgba(249, 115, 22, 0.85)';
-                scopeCtx.shadowColor = 'rgba(249, 115, 22, 0.6)';
-                scopeCtx.beginPath();
-                
-                for (let x = 0; x < scopeCanvas.width; x++) {
-                    const decay = Math.exp(-x * 0.01);
-                    const y = scopeCanvas.height / 2 + Math.sin(x * 0.15 - animationPhase * 3) * 22 * decay;
-                    if (x === 0) scopeCtx.moveTo(x, y);
-                    else scopeCtx.lineTo(x, y);
-                }
-                scopeCtx.stroke();
-            } else if (currentAnimationType === 'shaft') {
-                // Square speed encoder pulses
-                scopeCtx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
-                scopeCtx.shadowColor = 'rgba(0, 240, 255, 0.6)';
-                scopeCtx.beginPath();
-                for (let x = 0; x < scopeCanvas.width; x++) {
-                    const term = Math.sin(x * 0.06 - animationPhase * 2);
-                    const y = scopeCanvas.height / 2 + (term >= 0 ? 15 : -15);
-                    if (x === 0) scopeCtx.moveTo(x, y);
-                    else scopeCtx.lineTo(x, y);
-                }
-                scopeCtx.stroke();
-            } else if (currentAnimationType === 'contacts') {
-                // DC brush excitation ripple spikes
-                scopeCtx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
-                scopeCtx.shadowColor = 'rgba(16, 185, 129, 0.6)';
-                scopeCtx.beginPath();
-                for (let x = 0; x < scopeCanvas.width; x++) {
-                    const noise = Math.sin(x * 0.3 + animationPhase * 1.5) * 2 + Math.cos(x * 0.9 - animationPhase * 3) * 1;
-                    const y = (scopeCanvas.height / 2 - 5) + noise;
-                    if (x === 0) scopeCtx.moveTo(x, y);
-                    else scopeCtx.lineTo(x, y);
-                }
-                scopeCtx.stroke();
-            } else if (currentAnimationType === 'rotor') {
-                // Pulsating magnetic flux poles
-                scopeCtx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
-                scopeCtx.shadowColor = 'rgba(239, 68, 68, 0.5)';
-                scopeCtx.beginPath();
-                for (let x = 0; x < scopeCanvas.width; x++) {
-                    const y = scopeCanvas.height / 2 + Math.abs(Math.sin(x * 0.05 - animationPhase * 0.5)) * 20 - 10;
-                    if (x === 0) scopeCtx.moveTo(x, y);
-                    else scopeCtx.lineTo(x, y);
-                }
-                scopeCtx.stroke();
             } else {
-                // Grid/noise
-                scopeCtx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-                scopeCtx.shadowColor = 'rgba(59, 130, 246, 0.4)';
+                // Draw idle flat line with micro-noise/static when motor is stopped
+                scopeCtx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+                scopeCtx.shadowColor = 'rgba(59, 130, 246, 0.2)';
                 scopeCtx.beginPath();
                 for (let x = 0; x < scopeCanvas.width; x++) {
-                    const y = scopeCanvas.height / 2 + (Math.random() - 0.5) * 4;
+                    const y = scopeCanvas.height / 2 + (Math.random() - 0.5) * 1.5;
                     if (x === 0) scopeCtx.moveTo(x, y);
                     else scopeCtx.lineTo(x, y);
                 }
@@ -963,14 +1131,16 @@
         // Subtle slip rings rotation simulation inside SVG
         let slipRingPhase = 0;
         function animateSlipRings() {
-            const ring1 = document.getElementById('slipRing1');
-            const ring2 = document.getElementById('slipRing2');
-            if (ring1 && ring2) {
-                slipRingPhase = (slipRingPhase + 1) % 360;
-                ring1.style.transform = `rotate(${slipRingPhase}deg)`;
-                ring1.style.transformOrigin = '258px 252px';
-                ring2.style.transform = `rotate(${-slipRingPhase}deg)`;
-                ring2.style.transformOrigin = '258px 252px';
+            if (isMotorRunning) {
+                const ring1 = document.getElementById('slipRing1');
+                const ring2 = document.getElementById('slipRing2');
+                if (ring1 && ring2) {
+                    slipRingPhase = (animationPhase * 180 / Math.PI) % 360;
+                    ring1.style.transform = `rotate(${slipRingPhase}deg)`;
+                    ring1.style.transformOrigin = '258px 252px';
+                    ring2.style.transform = `rotate(${-slipRingPhase}deg)`;
+                    ring2.style.transformOrigin = '258px 252px';
+                }
             }
             requestAnimationFrame(animateSlipRings);
         }

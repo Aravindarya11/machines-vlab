@@ -13,37 +13,11 @@ function initMain() {
     if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
     if (toggleBtnTopbar) toggleBtnTopbar.addEventListener('click', toggleSidebar);
 
-    // Theme Toggle
-    const themeToggle = document.getElementById('themeToggle');
+    // Theme Settings (Forced Dark Mode)
     const html = document.documentElement;
-    const themeIcon = themeToggle.querySelector('i');
-    
-    // Check local storage for theme
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    html.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
+    html.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
 
-    themeToggle.addEventListener('click', () => {
-        const currentTheme = html.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
-        
-        // Trigger resize event to update plotly graphs
-        window.dispatchEvent(new Event('resize'));
-    });
-
-    function updateThemeIcon(theme) {
-        if (theme === 'dark') {
-            themeIcon.className = 'fa-solid fa-sun';
-            themeToggle.querySelector('span').textContent = 'Light Mode';
-        } else {
-            themeIcon.className = 'fa-solid fa-moon';
-            themeToggle.querySelector('span').textContent = 'Dark Mode';
-        }
-    }
 
     // Datetime Update
     const datetimeElement = document.getElementById('currentDatetime');
@@ -84,15 +58,124 @@ function showToast(message, type = 'info') {
 }
 
 // Download Report Utility
-function downloadCSV(filename, text) {
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(text));
-    element.setAttribute('download', filename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+// Download Report Utility (Generates PDF using jsPDF)
+function downloadPDF(filename, text) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Page margins and vertical position tracking
+    const marginX = 20;
+    let posY = 20;
+    
+    // Split the CSV format string into lines
+    const lines = text.split('\n');
+    
+    // Add decorative top bar (cyan primary color)
+    doc.setFillColor(6, 182, 212); // #06b6d4
+    doc.rect(0, 0, 220, 10, 'F');
+    
+    // Date/Time
+    const now = new Date();
+    const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+    
+    // Header title
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text("ELECTRICAL MACHINE VIRTUAL LABORATORY", marginX, posY + 5);
+    
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text(`Report Generated: ${dateStr}`, marginX, posY + 11);
+    
+    posY += 20;
+    
+    lines.forEach(line => {
+        line = line.trim();
+        if (!line) {
+            posY += 4;
+            return;
+        }
+        
+        if (line.startsWith("===") || line.includes("Lab Report") || line.includes("Results:") || line.includes("Inputs:") || line.startsWith("=== ")) {
+            // It's a Section Header
+            posY += 6;
+            
+            // Clean section title
+            const sectionTitle = line.replace(/===/g, '').trim().toUpperCase();
+            
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(6, 182, 212); // Cyan Primary
+            doc.text(sectionTitle, marginX, posY);
+            posY += 3;
+            
+            // Underline
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.5);
+            doc.line(marginX, posY, 190, posY);
+            posY += 6;
+        } else if (line.includes(",")) {
+            // Key-Value pair row
+            const parts = line.split(',');
+            const label = parts[0].trim();
+            const value = parts[1].trim();
+            
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9.5);
+            doc.setTextColor(51, 65, 85); // slate-700
+            doc.text(label, marginX, posY);
+            
+            doc.setFont("Helvetica", "bold");
+            doc.setTextColor(15, 23, 42); // slate-900
+            doc.text(value, 130, posY);
+            posY += 6.5;
+        } else {
+            // Regular line
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text(line, marginX, posY);
+            posY += 6.5;
+        }
+        
+        // Page boundary check
+        if (posY > 270) {
+            doc.addPage();
+            // Top bar on new page
+            doc.setFillColor(6, 182, 212);
+            doc.rect(0, 0, 220, 10, 'F');
+            posY = 25;
+        }
+    });
+    
+    // Footer signature / credits
+    posY += 10;
+    if (posY > 260) {
+        doc.addPage();
+        doc.setFillColor(6, 182, 212);
+        doc.rect(0, 0, 220, 10, 'F');
+        posY = 25;
+    }
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(marginX, posY, 190, posY);
+    posY += 8;
+    
+    doc.setFont("Helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Virtual Laboratory Simulation Deck", marginX, posY);
+    
+    doc.setFont("Helvetica", "normal");
+    doc.text("Developed by Aravind S and Balqis Ahmed", 125, posY);
+    
+    // Save generated PDF
+    doc.save(filename);
 }
+
 
 // Global helper to update machine simulation LED status
 function updateStatusLED(state) {

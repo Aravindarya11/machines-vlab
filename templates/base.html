@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <!-- jsPDF for exporting reports as PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- MathJax for rendering math formulas -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
     <!-- Custom CSS -->
@@ -38,7 +40,6 @@
                 <li><a href="{{ url_for('contact') }}" data-tooltip="Contact" class="{% if request.endpoint == 'contact' %}active{% endif %}"><i class="fa-solid fa-envelope"></i> <span>Contact</span></a></li>
             </ul>
             <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 8px;">
-                <button class="theme-toggle" id="themeToggle"><i class="fa-solid fa-moon"></i> <span>Theme</span></button>
                 <div class="developer-credit" style="font-size: 0.75rem; color: var(--text-muted); text-align: center; font-weight: 500; border-top: 1px solid var(--border); padding-top: 8px; width: 100%;">
                     Developed by <span style="color: var(--primary); font-weight: bold;">Aravind S and Balqis Ahmed</span>
                 </div>

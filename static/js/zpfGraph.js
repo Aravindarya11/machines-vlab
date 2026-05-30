@@ -748,7 +748,7 @@ function generateReport() {
     csv += `E0 (Phase),${calcResults.E0_phase.toFixed(2)} V\n`;
     csv += `Voltage Regulation,${calcResults.reg.toFixed(2)} %\n`;
     
-    downloadCSV('ZPF_Potier_Lab_Report.csv', csv);
+    downloadPDF('ZPF_Potier_Lab_Report.pdf', csv);
 }
 
 // ─── SVG Regulation Gauge ──────────────────────────────────────────

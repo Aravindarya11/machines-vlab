@@ -858,5 +858,5 @@ function generateReport() {
     csv += `E0 (p.u.),${(calcResults.E0 && V) ? (calcResults.E0 / V).toFixed(4) : '-'}\n`;
     csv += `VR (p.u.),${calcResults.reg ? (calcResults.reg / 100).toFixed(4) : '-'}\n`;
 
-    downloadCSV('EMF_Lab_Report.csv', csv);
+    downloadPDF('EMF_Lab_Report.pdf', csv);
 }
