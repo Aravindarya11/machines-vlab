@@ -114,6 +114,14 @@
     position: relative;
     font-size: 1.1rem;
     box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+    overflow: hidden;
+}
+
+.bot-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .online-status {
