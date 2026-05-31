@@ -172,6 +172,30 @@ html.intro-active, body.intro-active {
     50% { transform: scale(1.2); box-shadow: 0 0 60px rgba(59,130,246,0.5), 0 0 120px rgba(139,92,246,0.25); }
 }
 
+/* ── Core Center "hI" Text ── */
+.core-hi-text {
+    position: absolute;
+    font-family: 'Orbitron', 'Courier New', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #00f0ff;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 20px rgba(0, 240, 255, 0.4);
+    z-index: 10;
+    pointer-events: none;
+}
+.core-hi-text.show {
+    opacity: 1;
+    transform: scale(1);
+    animation: coreHiPulse 1.5s infinite ease-in-out;
+}
+@keyframes coreHiPulse {
+    0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(0, 240, 255, 0.8); }
+    50% { transform: scale(1.15); text-shadow: 0 0 20px rgba(0, 240, 255, 1), 0 0 30px rgba(0, 240, 255, 0.6); }
+}
+
 /* ── Phase Coil Glow Points ── */
 .phase-glow {
     position: absolute;
@@ -1038,6 +1062,7 @@ html.intro-active, body.intro-active {
         <div class="core-ring core-ring-4" id="ring4"></div>
         <div class="scan-line" id="scanLine"></div>
         <div class="core-center" id="coreCenter"></div>
+        <div class="core-hi-text" id="coreHiText">hI</div>
         
         <!-- Phase coil glows -->
         <div class="phase-glow phase-a-glow" id="phaseA"></div>
@@ -1052,6 +1077,7 @@ html.intro-active, body.intro-active {
 
     <!-- Boot text terminal -->
     <div class="boot-text">
+        <div class="boot-line sys-text" id="boot0" style="color: #3b82f6;">▸ USER DETECTED... WELCOME GREETING: "hI"</div>
         <div class="boot-line sys-text" id="boot1">▸ INITIALIZING CORE SYSTEMS...</div>
         <div class="boot-line sys-text" id="boot2">▸ LOADING MACHINE PARAMETERS... OK</div>
         <div class="boot-line sys-text" id="boot3">▸ FIELD EXCITATION CIRCUIT... ENERGIZED</div>
@@ -1325,6 +1351,7 @@ html.intro-active, body.intro-active {
             // Phase 3: Scan line, core center power up
             [2400, 'scanLine', 'show'],
             [2700, 'coreCenter', 'show'],
+            [2700, 'coreHiText', 'show'],
 
             // Phase 4: Phase coils energize
             [3000, 'phaseA', 'show'],
@@ -1342,6 +1369,7 @@ html.intro-active, body.intro-active {
             [5100, 'spark3', 'show'],
 
             // Phase 7: Boot text lines appear one by one
+            [800,  'boot0', 'show'],
             [1500, 'boot1', 'show'],
             [2250, 'boot2', 'show'],
             [3000, 'boot3', 'show'],

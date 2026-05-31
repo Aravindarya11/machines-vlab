@@ -17,6 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chatbot CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -69,7 +71,56 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Floating Chatbot Widget -->
+    <div id="emvl-chatbot-widget" class="emvl-chatbot-widget">
+        <!-- Floating Chat Button -->
+        <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" aria-label="Open Chatbot">
+            <i class="fa-solid fa-comments"></i>
+            <span class="chatbot-notification-dot"></span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chatbot-window" class="chatbot-window hidden">
+            <!-- Header -->
+            <div class="chatbot-header">
+                <div class="bot-info">
+                    <div class="bot-avatar">
+                        <i class="fa-solid fa-robot"></i>
+                        <span class="online-status"></span>
+                    </div>
+                    <div class="bot-details">
+                        <h4>EMVL Assistant</h4>
+                        <span>Online | AI Tutor</span>
+                    </div>
+                </div>
+                <button id="chatbot-close-btn" class="chatbot-close-btn" aria-label="Close Chatbot">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="chatbot-messages" class="chatbot-messages"></div>
+
+            <!-- Quick Suggestions (Chips) -->
+            <div id="chatbot-suggestions" class="chatbot-suggestions">
+                <button class="suggestion-chip" data-question="What is the EMF Method?">EMF Method</button>
+                <button class="suggestion-chip" data-question="Explain the MMF Method.">MMF Method</button>
+                <button class="suggestion-chip" data-question="Tell me about the ZPF Method.">ZPF Method</button>
+                <button class="suggestion-chip" data-question="How to calculate voltage regulation?">Voltage Regulation</button>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chatbot-input-area">
+                <input type="text" id="chatbot-input" placeholder="Ask about EMF, MMF, or ZPF..." autocomplete="off">
+                <button id="chatbot-send-btn" class="chatbot-send-btn" aria-label="Send Message">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
