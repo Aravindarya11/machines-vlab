@@ -75,7 +75,7 @@
     <div id="emvl-chatbot-widget" class="emvl-chatbot-widget">
         <!-- Floating Chat Button -->
         <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" aria-label="Open Chatbot">
-            <i class="fa-solid fa-comments"></i>
+            <img src="{{ url_for('static', filename='img/bot_avatar.png') }}" alt="ARYA" class="chatbot-toggle-avatar">
             <span class="chatbot-notification-dot"></span>
         </button>
 
@@ -85,11 +85,11 @@
             <div class="chatbot-header">
                 <div class="bot-info">
                     <div class="bot-avatar">
-                        <img src="{{ url_for('static', filename='img/bot_avatar.png') }}" alt="Sparky McFlux" class="bot-avatar-img">
+                        <img src="{{ url_for('static', filename='img/bot_avatar.png') }}" alt="ARYA" class="bot-avatar-img">
                         <span class="online-status"></span>
                     </div>
                     <div class="bot-details">
-                        <h4>Sparky McFlux</h4>
+                        <h4>ARYA</h4>
                         <span>Online | AI Tutor</span>
                     </div>
                 </div>

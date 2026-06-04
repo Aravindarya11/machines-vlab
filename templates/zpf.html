@@ -99,6 +99,21 @@
         <div class="card" style="padding: 10px;">
             <div id="zpfGraph" class="graph-container"></div>
             
+            <div id="graphCoords" style="margin: 10px 0; padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 20px; justify-content: center; border: 1px solid var(--border);">
+                <span><i class="fa-solid fa-arrow-pointer" style="color: var(--primary);"></i> Hover over the graph to inspect coordinates</span>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <label style="font-size: 0.88rem; color: var(--text-main); font-weight: 600;"><i class="fa-solid fa-signature" style="color: var(--accent);"></i> Interactive Drawing Board:</label>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" id="btnModeDraw" style="padding: 6px 14px; font-size: 0.85rem; height: auto; font-weight: 600;"><i class="fa-solid fa-pencil"></i> Draw Line</button>
+                    <button class="btn btn-secondary" id="btnModeErase" style="padding: 6px 14px; font-size: 0.85rem; height: auto; font-weight: 600;"><i class="fa-solid fa-eraser"></i> Erase Line</button>
+                    <button class="btn btn-primary" id="btnModeZoom" style="padding: 6px 14px; font-size: 0.85rem; height: auto; font-weight: 600;"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom/Pan</button>
+                    <button class="btn btn-secondary" id="btnClearDrawings" style="padding: 6px 14px; font-size: 0.85rem; height: auto; font-weight: 600;"><i class="fa-solid fa-trash"></i> Clear All</button>
+                </div>
+                <span id="drawingStatusText" style="font-family: 'Inter', sans-serif; font-size: 0.82rem; color: var(--text-muted); margin-left: auto;">Status: Zoom/Pan mode active.</span>
+            </div>
+            
             <div class="controls-panel">
                 <button class="btn btn-secondary btn-icon" id="btnPause" title="Pause"><i class="fa-solid fa-pause"></i></button>
                 <button class="btn btn-secondary btn-icon" id="btnResume" title="Resume"><i class="fa-solid fa-play"></i></button>

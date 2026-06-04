@@ -195,6 +195,33 @@ html.intro-active, body.intro-active {
     0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(0, 240, 255, 0.8); }
     50% { transform: scale(1.15); text-shadow: 0 0 20px rgba(0, 240, 255, 1), 0 0 30px rgba(0, 240, 255, 0.6); }
 }
+/* ── Top Status Banner "ARYA ACTIVATED" ── */
+.hud-top-status {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    font-family: 'Orbitron', 'Courier New', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #3b82f6;
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 8px 24px;
+    background: rgba(8, 12, 24, 0.7);
+    backdrop-filter: blur(8px);
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
+    pointer-events: none;
+}
+.hud-top-status.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+}
 
 /* ── Phase Coil Glow Points ── */
 .phase-glow {
@@ -1040,6 +1067,7 @@ html.intro-active, body.intro-active {
 {% block intro %}
 <!-- ═══════════════ JARVIS INTRO OVERLAY ═══════════════ -->
 <div id="introOverlay">
+    <div class="hud-top-status" id="hudTopStatus">ARYA ACTIVATED // STATUS: ONLINE</div>
     <div class="intro-grid" id="introGrid"></div>
     <div class="h-scan" id="hScan"></div>
     
@@ -1077,6 +1105,7 @@ html.intro-active, body.intro-active {
 
     <!-- Boot text terminal -->
     <div class="boot-text">
+        <div class="boot-line sys-text" id="boot00" style="color: #3b82f6;">▸ ARYA ACTIVATED... STATUS: ONLINE</div>
         <div class="boot-line sys-text" id="boot0" style="color: #3b82f6;">▸ USER DETECTED... WELCOME GREETING: "hI"</div>
         <div class="boot-line sys-text" id="boot1">▸ INITIALIZING CORE SYSTEMS...</div>
         <div class="boot-line sys-text" id="boot2">▸ LOADING MACHINE PARAMETERS... OK</div>
@@ -1335,50 +1364,52 @@ html.intro-active, body.intro-active {
         // Timeline: [delay_ms, elementId, className_to_add]
         const timeline = [
             // Phase 1: Grid and HUD corners appear
-            [300,  'introGrid', 'show'],
-            [450,  'hudTL', 'show'],
-            [600,  'hudTR', 'show'],
-            [750,  'hudBL', 'show'],
-            [900,  'hudBR', 'show'],
-            [600,  'hScan', 'show'],
+            [200,  'introGrid', 'show'],
+            [300,  'hudTL', 'show'],
+            [400,  'hudTR', 'show'],
+            [500,  'hudBL', 'show'],
+            [600,  'hudBR', 'show'],
+            [400,  'hScan', 'show'],
+            [300,  'hudTopStatus', 'show'],
 
             // Phase 2: Machine core rings expand from center
-            [1200, 'ring1', 'show'],
-            [1500, 'ring2', 'show'],
-            [1800, 'ring3', 'show'],
-            [2100, 'ring4', 'show'],
+            [700,  'ring1', 'show'],
+            [900,  'ring2', 'show'],
+            [1100, 'ring3', 'show'],
+            [1300, 'ring4', 'show'],
 
             // Phase 3: Scan line, core center power up
-            [2400, 'scanLine', 'show'],
-            [2700, 'coreCenter', 'show'],
-            [2700, 'coreHiText', 'show'],
+            [1500, 'scanLine', 'show'],
+            [1700, 'coreCenter', 'show'],
+            [1700, 'coreHiText', 'show'],
 
             // Phase 4: Phase coils energize
-            [3000, 'phaseA', 'show'],
-            [3300, 'phaseB', 'show'],
-            [3600, 'phaseC', 'show'],
+            [1900, 'phaseA', 'show'],
+            [2100, 'phaseB', 'show'],
+            [2300, 'phaseC', 'show'],
 
             // Phase 5: Flux lines appear
-            [3900, 'flux1', 'show'],
-            [4050, 'flux2', 'show'],
-            [4200, 'flux3', 'show'],
+            [2500, 'flux1', 'show'],
+            [2600, 'flux2', 'show'],
+            [2700, 'flux3', 'show'],
 
             // Phase 6: Electric arc sparks
-            [3000, 'spark1', 'show'],
-            [4200, 'spark2', 'show'],
-            [5100, 'spark3', 'show'],
+            [1900, 'spark1', 'show'],
+            [2600, 'spark2', 'show'],
+            [3200, 'spark3', 'show'],
 
             // Phase 7: Boot text lines appear one by one
-            [800,  'boot0', 'show'],
-            [1500, 'boot1', 'show'],
-            [2250, 'boot2', 'show'],
-            [3000, 'boot3', 'show'],
-            [3750, 'boot4', 'show'],
-            [4500, 'boot5', 'show'],
-            [5400, 'boot6', 'show'],
-            [5850, 'boot7', 'show'],
-            [6600, 'boot8', 'show'],
-            [7500, 'boot9', 'show'],
+            [300,  'boot00', 'show'],
+            [700,  'boot0', 'show'],
+            [1100, 'boot1', 'show'],
+            [1400, 'boot2', 'show'],
+            [1900, 'boot3', 'show'],
+            [2400, 'boot4', 'show'],
+            [2900, 'boot5', 'show'],
+            [3500, 'boot6', 'show'],
+            [3800, 'boot7', 'show'],
+            [4200, 'boot8', 'show'],
+            [4800, 'boot9', 'show'],
         ];
 
         // Execute timeline
@@ -1389,8 +1420,8 @@ html.intro-active, body.intro-active {
             }, delay);
         });
 
-        // Dismiss after boot sequence (originally 6200, now 3s longer = 9200)
-        setTimeout(dismissIntro, 9200);
+        // Dismiss after boot sequence in 6 seconds
+        setTimeout(dismissIntro, 6000);
     })();
 
     function dismissIntro() {

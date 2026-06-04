@@ -23,7 +23,7 @@
     const knowledgeBase = [
         {
             keywords: [/hi/i, /hello/i, /hey/i, /greetings/i],
-            answer: "Hi there! 👋 Welcome to the Virtual Lab. I am Sparky McFlux, your crazy high-voltage digital tutor! ⚡ Ask me anything about **EMF**, **MMF**, or **ZPF** methods, or ask **how to use** the simulation deck!"
+            answer: "Hi there! 👋 Welcome to the Virtual Lab. I am ARYA, your high-voltage digital assistant! ⚡ Ask me anything about **EMF**, **MMF**, or **ZPF** methods, or ask **how to use** the simulation deck!"
         },
         {
             keywords: [/emf/i, /synchronous impedance/i, /impedance method/i],
@@ -65,7 +65,7 @@
             
             // If empty, append welcome message
             if (messagesEl.children.length === 0) {
-                showBotResponse("Hi! I am Sparky McFlux, your crazy high-voltage digital tutor! ⚡ Ask me anything about Synchronous Machine Regulation (EMF, MMF, or ZPF methods), or how to use the simulator!");
+                showBotResponse("Hi! I am ARYA, your high-voltage digital assistant! ⚡ Ask me anything about Synchronous Machine Regulation (EMF, MMF, or ZPF methods), or how to use the simulator!");
             }
         }
     }

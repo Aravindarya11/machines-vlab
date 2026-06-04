@@ -2088,3 +2088,135 @@ path.js-line[style*="#f59e0b"] {
     border-color: rgba(0, 240, 255, 0.4) !important;
 }
 
+/* ─── Industrial Cutaway Animations ─── */
+
+/* Keyway rotation animation */
+#ind-keyway {
+    transform-origin: 105px 232.5px;
+    transition: transform 0.1s linear;
+}
+
+#industrialMotorSvg.motor-running #ind-keyway {
+    animation: spin-keyway 0.6s linear infinite;
+}
+
+@keyframes spin-keyway {
+    0% {
+        transform: translateY(0) scaleY(1);
+        opacity: 1;
+    }
+    25% {
+        transform: translateY(-5px) scaleY(0.2);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translateY(0) scaleY(0);
+        opacity: 0;
+    }
+    75% {
+        transform: translateY(12px) scaleY(0.2);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(0) scaleY(1);
+        opacity: 1;
+    }
+}
+
+/* Winding glow animation when running */
+#industrialMotorSvg.motor-running #ind-windings-left,
+#industrialMotorSvg.motor-running #ind-windings-right {
+    animation: winding-pulse-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes winding-pulse-glow {
+    0% {
+        filter: drop-shadow(0 0 2px rgba(234, 88, 12, 0.45));
+    }
+    100% {
+        filter: drop-shadow(0 0 12px rgba(234, 88, 12, 0.95)) drop-shadow(0 0 4px rgba(234, 88, 12, 0.45));
+    }
+}
+
+/* Dynamic Airflow stream animation */
+#industrialMotorSvg.motor-running #ind-airflow {
+    opacity: 1 !important;
+}
+
+.airflow-stream {
+    animation: airflow-move 2.2s linear infinite;
+}
+
+@keyframes airflow-move {
+    to {
+        stroke-dashoffset: -80;
+    }
+}
+
+/* Dynamic magnetic flux in air gap */
+#industrialMotorSvg.motor-running #ind-flux-gap {
+    opacity: 1 !important;
+}
+
+.flux-arc {
+    animation: flux-pulsate 1.5s ease-in-out infinite;
+}
+
+@keyframes flux-pulsate {
+    0%, 100% {
+        opacity: 0.35;
+        stroke: rgba(0, 240, 255, 0.4);
+        stroke-width: 1px;
+    }
+    50% {
+        opacity: 0.95;
+        stroke: rgba(0, 255, 128, 0.8);
+        stroke-width: 2.2px;
+        filter: drop-shadow(0 0 4px rgba(0, 255, 128, 0.7));
+    }
+}
+
+/* Brush sparks jitter animation */
+#industrialMotorSvg.motor-running #brush-sparks {
+    opacity: 1 !important;
+}
+
+.spark-particle, .spark-particle-line {
+    transform-origin: 660px 208px;
+    animation: spark-jitter 0.12s linear infinite;
+}
+
+@keyframes spark-jitter {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(1.5px, -1.2px) scale(1.6);
+        opacity: 1;
+    }
+    25% {
+        transform: translate(-1.2px, 0.5px) scale(0.7);
+        opacity: 0.4;
+    }
+    75% {
+        transform: translate(0.8px, 1px) scale(1.2);
+        opacity: 0.95;
+    }
+}
+
+/* Rotating industrial cooling fan effect */
+#industrialMotorSvg.motor-running #ind-fan {
+    animation: rotate-fan-fan 1s linear infinite;
+    transform-origin: 205px 245px;
+}
+
+@keyframes rotate-fan-fan {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+

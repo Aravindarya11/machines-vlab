@@ -6,9 +6,14 @@ let calcResults = {};
 let currentInputMode = 'manual';
 let csvData = null;
 let animationCancelled = false;
+let customLines = [];
+let currentDrawingTool = 'zoom';
+let firstClickPoint = null;
 
 function initMmfGraph() {
     initGraph();
+
+    const gd = document.getElementById('mmfGraph');
 
     document.getElementById('btnStart').addEventListener('click', startAnimation);
     document.getElementById('btnPause').addEventListener('click', () => { isPaused = true; updateStatusLED('paused'); });
@@ -25,6 +30,58 @@ function initMmfGraph() {
     document.getElementById('tabCSV').addEventListener('click', () => setInputMode('csv'));
     document.getElementById('occCsvFileInput').addEventListener('change', handleOccCSVUpload);
     document.getElementById('sccCsvFileInput').addEventListener('change', handleSccCSVUpload);
+
+    document.getElementById('btnModeDraw').addEventListener('click', () => setDrawingTool('drawline'));
+    document.getElementById('btnModeErase').addEventListener('click', () => setDrawingTool('eraseshape'));
+    document.getElementById('btnModeZoom').addEventListener('click', () => setDrawingTool('zoom'));
+    document.getElementById('btnClearDrawings').addEventListener('click', clearAllDrawings);
+    
+    // Add delegated mouse drawing handlers
+    let mouseDownPos = null;
+    gd.addEventListener('mousedown', function(e) {
+        if (currentDrawingTool !== 'drawline') return;
+        const dragLayer = gd.querySelector('.draglayer');
+        if (dragLayer && dragLayer.contains(e.target)) {
+            mouseDownPos = { x: e.clientX, y: e.clientY };
+        }
+    });
+
+    gd.addEventListener('mouseup', function(e) {
+        if (currentDrawingTool !== 'drawline') return;
+        if (!mouseDownPos) return;
+        
+        const dragLayer = gd.querySelector('.draglayer');
+        if (dragLayer && dragLayer.contains(e.target)) {
+            const dx = e.clientX - mouseDownPos.x;
+            const dy = e.clientY - mouseDownPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 5) {
+                handleGraphClick(e, dragLayer);
+            }
+        }
+        mouseDownPos = null;
+    });
+    
+    // Add Plotly hover listeners
+    gd.on('plotly_hover', function(data) {
+        if (data && data.points && data.points.length > 0) {
+            const pt = data.points[0];
+            const x = pt.x;
+            const y = pt.y;
+            const name = pt.trace.name;
+            const coordBox = document.getElementById('graphCoords');
+            if (pt.trace.yaxis === 'y2' || pt.y2) {
+                coordBox.innerHTML = `<span><strong>Trace:</strong> ${name}</span> | <span><strong>Field Current (If):</strong> ${x.toFixed(3)} A</span> | <span><strong>Short Circuit Current (Isc):</strong> ${y.toFixed(2)} A</span>`;
+            } else {
+                coordBox.innerHTML = `<span><strong>Trace:</strong> ${name}</span> | <span><strong>Field Current (If):</strong> ${x.toFixed(3)} A</span> | <span><strong>Voltage (Voc):</strong> ${y.toFixed(1)} V</span>`;
+            }
+        }
+    });
+    
+    gd.on('plotly_unhover', function() {
+        document.getElementById('graphCoords').innerHTML = `<span><i class="fa-solid fa-arrow-pointer" style="color: var(--primary);"></i> Hover over the graph to inspect coordinates</span>`;
+    });
 }
 
 if (document.readyState === 'loading') {
@@ -192,8 +249,10 @@ function initGraph() {
             font: { family: 'Orbitron, monospace', color: '#00f0ff', size: 11 }
         },
         margin: { l: 60, r: 60, t: 50, b: 50 },
-        shapes: [],
-        annotations: []
+        newshape: {
+            line: { color: '#a855f7', width: 3 },
+            fillcolor: 'rgba(168, 85, 247, 0.25)'
+        }
     };
 
     Plotly.newPlot('mmfGraph', [], mmfLayout, {responsive: true, displayModeBar: false});
@@ -736,6 +795,21 @@ function resetGraph() {
     document.getElementById('phasorCard').style.display = 'none';
     document.getElementById('explanationText').innerHTML = "Welcome to the MMF Method simulation. Enter data and start the animation.";
     updateStatusLED('ready');
+    
+    // Reset drawing state
+    firstClickPoint = null;
+    clearTempMarker();
+    
+    const btnDraw = document.getElementById('btnModeDraw');
+    const btnErase = document.getElementById('btnModeErase');
+    const btnZoom = document.getElementById('btnModeZoom');
+    if (btnDraw) btnDraw.className = 'btn btn-secondary';
+    if (btnErase) btnErase.className = 'btn btn-secondary';
+    if (btnZoom) btnZoom.className = 'btn btn-primary';
+    const statusText = document.getElementById('drawingStatusText');
+    if (statusText) statusText.innerHTML = 'Status: Zoom/Pan mode active.';
+    currentDrawingTool = 'zoom';
+
     initGraph();
 }
 
@@ -887,6 +961,128 @@ function drawPhasorDiagram(If1, If2, If2_angle, If0x, If0y, If0, pfType) {
     legend.innerHTML = `
         <span style="color:#3b82f6"><i class="fa-solid fa-minus"></i> If1 (Field current for V_rated)</span>
         <span style="color:#ef4444"><i class="fa-solid fa-minus"></i> If2 (Equivalent field current for armature reaction)</span>
-        <span style="color:#a855f7"><i class="fa-solid fa-minus" style="text-decoration:underline dotted"></i> If0 (Resultant field current)</span>
+        <span style="color:#a855f7;"><i class="fa-solid fa-minus" style="text-decoration:underline dotted"></i> If0 (Resultant field current)</span>
     `;
+}
+
+// ─── Interactive Drawing Board Functions ───────────────────────────
+function setDrawingTool(tool) {
+    currentDrawingTool = tool;
+    
+    // Reset click drawing state
+    firstClickPoint = null;
+    clearTempMarker();
+    
+    const btnDraw = document.getElementById('btnModeDraw');
+    const btnErase = document.getElementById('btnModeErase');
+    const btnZoom = document.getElementById('btnModeZoom');
+    const statusText = document.getElementById('drawingStatusText');
+    
+    if (btnDraw) btnDraw.className = 'btn btn-secondary';
+    if (btnErase) btnErase.className = 'btn btn-secondary';
+    if (btnZoom) btnZoom.className = 'btn btn-secondary';
+    
+    if (tool === 'drawline') {
+        if (btnDraw) btnDraw.className = 'btn btn-primary';
+        if (statusText) statusText.innerHTML = 'Status: Draw Line active. Click/drag OR select consecutive points.';
+        Plotly.relayout('mmfGraph', { dragmode: 'drawline' });
+    } else if (tool === 'eraseshape') {
+        if (btnErase) btnErase.className = 'btn btn-primary';
+        if (statusText) statusText.innerHTML = 'Status: Erase active. Click a custom line to erase it.';
+        Plotly.relayout('mmfGraph', { dragmode: 'eraseshape' });
+    } else {
+        if (btnZoom) btnZoom.className = 'btn btn-primary';
+        if (statusText) statusText.innerHTML = 'Status: Zoom/Pan mode active.';
+        Plotly.relayout('mmfGraph', { dragmode: 'zoom' });
+    }
+}
+
+function handleGraphClick(e, dragLayer) {
+    const rect = dragLayer.getBoundingClientRect();
+    const xPx = e.clientX - rect.left;
+    const yPx = e.clientY - rect.top;
+    
+    const gd = document.getElementById('mmfGraph');
+    const xAxis = gd._fullLayout.xaxis;
+    const yAxis = gd._fullLayout.yaxis;
+    
+    if (!xAxis || !yAxis) return;
+    
+    const xVal = xAxis.p2d(xPx);
+    const yVal = yAxis.p2d(yPx);
+    
+    if (!firstClickPoint) {
+        // First click
+        firstClickPoint = { x: xVal, y: yVal };
+        showTempMarker(xVal, yVal);
+        const statusText = document.getElementById('drawingStatusText');
+        if (statusText) statusText.innerHTML = `Status: Selected start point (${xVal.toFixed(2)} A, ${yVal.toFixed(1)} V). Click second point.`;
+    } else {
+        // Second click
+        const secondPt = { x: xVal, y: yVal };
+        const newShape = {
+            type: 'line',
+            x0: firstClickPoint.x,
+            y0: firstClickPoint.y,
+            x1: secondPt.x,
+            y1: secondPt.y,
+            line: {
+                color: '#a855f7',
+                width: 3
+            }
+        };
+        const currentShapes = gd.layout.shapes || [];
+        Plotly.relayout(gd, {
+            shapes: [...currentShapes, newShape]
+        });
+        
+        clearTempMarker();
+        firstClickPoint = null;
+        const statusText = document.getElementById('drawingStatusText');
+        if (statusText) statusText.innerHTML = `Status: Line drawn! Click a point to start another line.`;
+    }
+}
+
+function showTempMarker(x, y) {
+    clearTempMarker();
+    
+    const traceTempMarker = {
+        x: [x],
+        y: [y],
+        mode: 'markers+text',
+        text: ['  Start Point'],
+        textposition: 'top right',
+        textfont: { color: '#a855f7', size: 11, family: 'Inter, sans-serif' },
+        marker: { color: '#ffffff', size: 10, line: { color: '#a855f7', width: 2 } },
+        name: 'TEMP_MARKER',
+        showlegend: false
+    };
+    
+    Plotly.addTraces('mmfGraph', traceTempMarker);
+}
+
+function clearTempMarker() {
+    const gd = document.getElementById('mmfGraph');
+    if (!gd || !gd.data) return;
+    const idx = gd.data.findIndex(t => t.name === 'TEMP_MARKER');
+    if (idx !== -1) {
+        Plotly.deleteTraces('mmfGraph', [idx]);
+    }
+}
+
+function clearAllDrawings() {
+    Plotly.relayout('mmfGraph', { shapes: [] });
+    firstClickPoint = null;
+    clearTempMarker();
+    const statusText = document.getElementById('drawingStatusText');
+    if (statusText) {
+        if (currentDrawingTool === 'drawline') {
+            statusText.innerHTML = 'Status: Draw Line active. Click/drag OR select consecutive points.';
+        } else if (currentDrawingTool === 'eraseshape') {
+            statusText.innerHTML = 'Status: Erase active. Click a custom line to erase it.';
+        } else {
+            statusText.innerHTML = 'Status: Zoom/Pan mode active.';
+        }
+    }
+    showToast('All custom drawings cleared!', 'success');
 }

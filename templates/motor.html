@@ -478,6 +478,12 @@
                     <filter id="indShadow" x="-10%" y="-10%" width="120%" height="120%">
                         <feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.5"/>
                     </filter>
+                    <!-- Airflow gradient -->
+                    <linearGradient id="airflowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="rgba(0, 240, 255, 0)" />
+                        <stop offset="50%" stop-color="rgba(0, 240, 255, 0.85)" />
+                        <stop offset="100%" stop-color="rgba(0, 240, 255, 0)" />
+                    </linearGradient>
                 </defs>
 
                 <!-- Grid/Diagnostic Background -->
@@ -488,7 +494,7 @@
                     <!-- Full-length central shaft -->
                     <rect x="70" y="230" width="660" height="30" rx="4" fill="url(#indShaftGrad)" stroke="#0f172a" />
                     <!-- Drive end keyway -->
-                    <rect x="85" y="230" width="40" height="5" fill="#0f172a" rx="1" />
+                    <rect id="ind-keyway" x="85" y="230" width="40" height="5" fill="#0f172a" rx="1" />
                 </g>
 
                 <!-- Stator Core Backing (visible inside cutout window) -->
@@ -639,7 +645,48 @@
                     <path d="M 649 208 L 649 198 L 638 198" fill="none" stroke="#ef4444" stroke-width="1" />
                     <path d="M 671 208 L 671 198 L 682 198" fill="none" stroke="#3b82f6" stroke-width="1" />
                 </g>
+
+                <!-- Dynamic Airflow Vents / Air Currents (Visible when running) -->
+                <g id="ind-airflow" opacity="0" style="transition: opacity 0.4s ease; pointer-events: none;">
+                    <!-- Upper Air Stream -->
+                    <path d="M 600 160 Q 430 135 250 160 Q 205 170 190 185" fill="none" stroke="url(#airflowGrad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12, 16" class="airflow-stream" />
+                    <!-- Lower Air Stream -->
+                    <path d="M 600 320 Q 430 345 250 320 Q 205 310 190 295" fill="none" stroke="url(#airflowGrad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12, 16" class="airflow-stream" />
+                    <!-- Left Outflow Top -->
+                    <path d="M 238 170 C 220 180, 210 160, 185 160" fill="none" stroke="rgba(0, 240, 255, 0.6)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8, 12" class="airflow-stream" />
+                    <!-- Left Outflow Bottom -->
+                    <path d="M 238 310 C 220 300, 210 320, 185 320" fill="none" stroke="rgba(0, 240, 255, 0.6)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8, 12" class="airflow-stream" />
+                </g>
+
+                <!-- Dynamic Magnetic Flux Fields in Air Gap (Visible when running) -->
+                <g id="ind-flux-gap" opacity="0" style="transition: opacity 0.4s ease; pointer-events: none;">
+                    <!-- Top Air Gap Flux Arcs -->
+                    <path d="M 330 165 C 330 165, 340 155, 350 165 M 370 165 C 370 165, 380 155, 390 165 M 410 165 C 410 165, 420 155, 430 165 M 450 165 C 450 165, 460 155, 470 165 M 490 165 C 490 165, 500 155, 510 165" fill="none" stroke="rgba(0, 240, 255, 0.45)" stroke-width="1.5" class="flux-arc" />
+                    <!-- Bottom Air Gap Flux Arcs -->
+                    <path d="M 330 325 C 330 325, 340 335, 350 325 M 370 325 C 370 325, 380 335, 390 325 M 410 325 C 410 325, 420 335, 430 325 M 450 325 C 450 325, 460 335, 470 325 M 490 325 C 490 325, 500 335, 510 325" fill="none" stroke="rgba(0, 240, 255, 0.45)" stroke-width="1.5" class="flux-arc" />
+                </g>
+
+                <!-- Slip Ring Brush Sparks -->
+                <g id="brush-sparks" opacity="0" style="transition: opacity 0.3s ease; pointer-events: none;">
+                    <!-- Left brush sparks -->
+                    <path d="M 649 208 L 647 204 L 651 204 L 649 208 Z" fill="#00f0ff" class="spark-particle" />
+                    <path d="M 649 208 L 652 205 L 646 205" fill="none" stroke="#eab308" stroke-width="0.8" class="spark-particle-line" />
+                    <!-- Right brush sparks -->
+                    <path d="M 671 208 L 669 204 L 673 204 L 671 208 Z" fill="#00f0ff" class="spark-particle" />
+                    <path d="M 671 208 L 674 205 L 668 205" fill="none" stroke="#eab308" stroke-width="0.8" class="spark-particle-line" />
+                </g>
             </svg>
+
+            <!-- Motor Run/Stop Control Panel overlay for Industrial View -->
+            <div class="motor-controls-overlay" style="position: absolute; bottom: 15px; right: 15px; z-index: 10;">
+                <button class="motor-run-btn" id="indMotorRunToggleBtn" title="Run/Stop Motor Simulation">
+                    <i class="fa-solid fa-play"></i> <span>RUN MOTOR</span>
+                </button>
+                <div class="motor-status-display">
+                    <span class="motor-status-led" id="indMotorStatusLed"></span>
+                    <span id="indMotorStatusText">STOPPED</span>
+                </div>
+            </div>
             
             <!-- Sliding Diagnostic HUD Sidebar -->
             <div class="industrial-hud-sidebar" id="industrialFloatingCard" style="position: absolute; right: 0; top: 0; bottom: 0; width: 330px; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(18px) saturate(1.7); -webkit-backdrop-filter: blur(18px) saturate(1.7); border-left: 1px solid rgba(59, 130, 246, 0.25); padding: 25px; display: flex; flex-direction: column; justify-content: flex-start; gap: 15px; box-shadow: -8px 0 32px rgba(0,0,0,0.6); z-index: 20; transform: translateX(105%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); pointer-events: auto;">
@@ -674,6 +721,18 @@
     //  SYNCHRONOUS MOTOR PART INSPECTOR ENGINE
     // ═══════════════════════════════════════════════════
     (function() {
+        let currentAnimationType = 'rmf';
+        let animationPhase = 0;
+        let isMotorRunning = false;
+
+        const motorRunToggleBtn = document.getElementById('motorRunToggleBtn');
+        const motorStatusLed = document.getElementById('motorStatusLed');
+        const motorStatusText = document.getElementById('motorStatusText');
+        
+        const indMotorRunToggleBtn = document.getElementById('indMotorRunToggleBtn');
+        const indMotorStatusLed = document.getElementById('indMotorStatusLed');
+        const indMotorStatusText = document.getElementById('indMotorStatusText');
+
         // Tab Switcher Controller
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -794,38 +853,62 @@
         const btnXray = document.getElementById('mode-xray');
         const btnExploded = document.getElementById('mode-exploded');
 
-        let currentAnimationType = 'rmf';
-        let animationPhase = 0;
-        let isMotorRunning = false;
+        function toggleMotor(running) {
+            isMotorRunning = running;
+            
+            const btns = [motorRunToggleBtn, indMotorRunToggleBtn];
+            const leds = [motorStatusLed, indMotorStatusLed];
+            const texts = [motorStatusText, indMotorStatusText];
+            
+            btns.forEach(btn => {
+                if (btn) {
+                    if (isMotorRunning) {
+                        btn.classList.add('running');
+                        btn.innerHTML = '<i class="fa-solid fa-stop"></i> <span>STOP MOTOR</span>';
+                    } else {
+                        btn.classList.remove('running');
+                        btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RUN MOTOR</span>';
+                    }
+                }
+            });
+            
+            leds.forEach(led => {
+                if (led) {
+                    if (isMotorRunning) led.classList.add('running');
+                    else led.classList.remove('running');
+                }
+            });
+            
+            texts.forEach(text => {
+                if (text) {
+                    text.textContent = isMotorRunning ? 'RUNNING' : 'STOPPED';
+                }
+            });
 
-        const motorRunToggleBtn = document.getElementById('motorRunToggleBtn');
-        const motorStatusLed = document.getElementById('motorStatusLed');
-        const motorStatusText = document.getElementById('motorStatusText');
+            const indSvg = document.getElementById('industrialMotorSvg');
+            if (indSvg) {
+                if (isMotorRunning) {
+                    indSvg.classList.add('motor-running');
+                } else {
+                    indSvg.classList.add('motor-stopping');
+                    setTimeout(() => {
+                        indSvg.classList.remove('motor-running', 'motor-stopping');
+                    }, 500);
+                }
+            }
+        }
 
         if (motorRunToggleBtn) {
             motorRunToggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent SVG zoom clicks
-                isMotorRunning = !isMotorRunning;
-                
-                if (isMotorRunning) {
-                    motorRunToggleBtn.classList.add('running');
-                    motorRunToggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> <span>STOP MOTOR</span>';
-                    if (motorStatusLed) {
-                        motorStatusLed.classList.add('running');
-                    }
-                    if (motorStatusText) {
-                        motorStatusText.textContent = 'RUNNING';
-                    }
-                } else {
-                    motorRunToggleBtn.classList.remove('running');
-                    motorRunToggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RUN MOTOR</span>';
-                    if (motorStatusLed) {
-                        motorStatusLed.classList.remove('running');
-                    }
-                    if (motorStatusText) {
-                        motorStatusText.textContent = 'STOPPED';
-                    }
-                }
+                toggleMotor(!isMotorRunning);
+            });
+        }
+
+        if (indMotorRunToggleBtn) {
+            indMotorRunToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent SVG zoom clicks
+                toggleMotor(!isMotorRunning);
             });
         }
 

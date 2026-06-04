@@ -27,10 +27,12 @@
     box-shadow: 0 4px 20px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 240, 255, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    overflow: hidden;
+    padding: 0;
 }
 
 .chatbot-toggle-btn:hover {
-    transform: scale(1.08) rotate(5deg);
+    transform: scale(1.08);
     border-color: #00f0ff;
     color: #ffffff;
     box-shadow: 0 0 30px rgba(0, 240, 255, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.2);
@@ -38,6 +40,18 @@
 
 .chatbot-toggle-btn:active {
     transform: scale(0.95);
+}
+
+.chatbot-toggle-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.chatbot-toggle-btn:hover .chatbot-toggle-avatar {
+    transform: scale(1.08);
 }
 
 /* Notification Indicator */

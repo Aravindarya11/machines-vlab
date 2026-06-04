@@ -11,11 +11,15 @@ let baseSpeed = 1000;
 let calcResults = {};
 let currentInputMode = 'manual';
 let csvData = null;
-let animationCancelled = false;
+let customLines = [];
+let currentDrawingTool = 'zoom';
+let firstClickPoint = null;
 
 // ─── Initialization ────────────────────────────────────────────────
 function initEmfGraph() {
     initGraph();
+
+    const gd = document.getElementById('emfGraph');
 
     document.getElementById('btnStart').addEventListener('click', startAnimation);
     document.getElementById('btnPause').addEventListener('click', () => { isPaused = true; updateStatusLED('paused'); });
@@ -32,6 +36,58 @@ function initEmfGraph() {
     document.getElementById('tabCSV').addEventListener('click', () => setInputMode('csv'));
     document.getElementById('occCsvFileInput').addEventListener('change', handleOccCSVUpload);
     document.getElementById('sccCsvFileInput').addEventListener('change', handleSccCSVUpload);
+
+    document.getElementById('btnModeDraw').addEventListener('click', () => setDrawingTool('drawline'));
+    document.getElementById('btnModeErase').addEventListener('click', () => setDrawingTool('eraseshape'));
+    document.getElementById('btnModeZoom').addEventListener('click', () => setDrawingTool('zoom'));
+    document.getElementById('btnClearDrawings').addEventListener('click', clearAllDrawings);
+    
+    // Add delegated mouse drawing handlers
+    let mouseDownPos = null;
+    gd.addEventListener('mousedown', function(e) {
+        if (currentDrawingTool !== 'drawline') return;
+        const dragLayer = gd.querySelector('.draglayer');
+        if (dragLayer && dragLayer.contains(e.target)) {
+            mouseDownPos = { x: e.clientX, y: e.clientY };
+        }
+    });
+
+    gd.addEventListener('mouseup', function(e) {
+        if (currentDrawingTool !== 'drawline') return;
+        if (!mouseDownPos) return;
+        
+        const dragLayer = gd.querySelector('.draglayer');
+        if (dragLayer && dragLayer.contains(e.target)) {
+            const dx = e.clientX - mouseDownPos.x;
+            const dy = e.clientY - mouseDownPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 5) {
+                handleGraphClick(e, dragLayer);
+            }
+        }
+        mouseDownPos = null;
+    });
+    
+    // Add Plotly hover listeners
+    gd.on('plotly_hover', function(data) {
+        if (data && data.points && data.points.length > 0) {
+            const pt = data.points[0];
+            const x = pt.x;
+            const y = pt.y;
+            const name = pt.trace.name;
+            const coordBox = document.getElementById('graphCoords');
+            if (pt.trace.yaxis === 'y2' || pt.y2) {
+                coordBox.innerHTML = `<span><strong>Trace:</strong> ${name}</span> | <span><strong>Field Current (If):</strong> ${x.toFixed(3)} A</span> | <span><strong>Short Circuit Current (Isc):</strong> ${y.toFixed(2)} A</span>`;
+            } else {
+                coordBox.innerHTML = `<span><strong>Trace:</strong> ${name}</span> | <span><strong>Field Current (If):</strong> ${x.toFixed(3)} A</span> | <span><strong>Voltage (Voc):</strong> ${y.toFixed(1)} V</span>`;
+            }
+        }
+    });
+    
+    gd.on('plotly_unhover', function() {
+        document.getElementById('graphCoords').innerHTML = `<span><i class="fa-solid fa-arrow-pointer" style="color: var(--primary);"></i> Hover over the graph to inspect coordinates</span>`;
+    });
 }
 
 if (document.readyState === 'loading') {
@@ -161,7 +217,11 @@ function initGraph() {
             bordercolor: 'rgba(0, 240, 255, 0.6)',
             font: { family: 'Orbitron, monospace', color: '#00f0ff', size: 11 }
         },
-        margin: { l: 60, r: 70, t: 50, b: 50 }
+        margin: { l: 60, r: 70, t: 50, b: 50 },
+        newshape: {
+            line: { color: '#a855f7', width: 3 },
+            fillcolor: 'rgba(168, 85, 247, 0.25)'
+        }
     };
     Plotly.newPlot('emfGraph', [], emfLayout, { responsive: true, displayModeBar: false });
 }
@@ -184,7 +244,8 @@ function parseInput() {
     const ra      = parseFloat(document.getElementById('ra').value);
     const pf      = parseFloat(document.getElementById('pf').value);
     const pfType  = document.getElementById('pfType').value;
-    return { occIf, occVoc, sccIf, sccIsc, ratedV, ratedI, ra, pf, pfType };
+    const zsMethod = document.getElementById('zsMethod').value;
+    return { occIf, occVoc, sccIf, sccIsc, ratedV, ratedI, ra, pf, pfType, zsMethod };
 }
 
 // ─── Interpolation Helpers ─────────────────────────────────────────
@@ -240,19 +301,19 @@ function cubicSplineInterpolate(xData, yData, numPoints) {
 }
 
 // ─── Find best Zs lookup index (closest to rated voltage) ──────────
-function findBestZsIndex(occVoc, sccIsc, ratedV) {
+function findBestZsIndex(occVoc, ratedV) {
     // Find OCC index whose voltage is closest to rated voltage
     // (standard textbook: Zs determined at rated terminal voltage)
-    let bestIdx = 1;
+    let bestIdx = 0;
     let bestDist = Infinity;
     for (let i = 0; i < occVoc.length; i++) {
         const dist = Math.abs(occVoc[i] - ratedV);
-        if (dist < bestDist && i < sccIsc.length) {
+        if (dist < bestDist) {
             bestDist = dist;
             bestIdx = i;
         }
     }
-    return Math.max(0, bestIdx);
+    return bestIdx;
 }
 
 // ─── Animation Primitives ──────────────────────────────────────────
@@ -613,14 +674,23 @@ async function startAnimation() {
         traceIdx++;
     });
 
-    // ── Step 6: Zs Determination at rated voltage ─────────────────────
-    await animateStep(6, "Determining <b>Synchronous Impedance Zs</b> from the OCC and SCC curves. Standard method: use the OCC point closest to rated voltage for the most accurate Zs (accounts for magnetic saturation).", async () => {
-        const lookupIdx = findBestZsIndex(data.occVoc, data.sccIsc, data.ratedV);
-        const If_val = data.occIf[lookupIdx];
-        const Voc_line = data.occVoc[lookupIdx];
-        const Voc_phase = Voc_line / Math.sqrt(3);
-        const Isc_val = data.sccIsc[Math.min(lookupIdx, data.sccIsc.length - 1)];
+    // ── Step 6: Zs Determination ─────────────────────────────────────
+    await animateStep(6, "Determining <b>Synchronous Impedance Zs</b> from the OCC and SCC curves. In the lab, Zs is typically calculated at the field current that produces the rated armature current (unsaturated Zs).", async () => {
+        let If_val, Voc_line, Isc_val;
 
+        if (data.zsMethod === 'ratedV') {
+            const lookupIdx = findBestZsIndex(data.occVoc, data.ratedV);
+            If_val = data.occIf[lookupIdx];
+            Voc_line = data.occVoc[lookupIdx];
+            Isc_val = calcResults.sccSlope * If_val;
+        } else {
+            // At rated armature current
+            Isc_val = data.ratedI;
+            If_val = Isc_val / calcResults.sccSlope;
+            Voc_line = interpolateXtoY(data.occIf, data.occVoc, If_val);
+        }
+
+        const Voc_phase = Voc_line / Math.sqrt(3);
         calcResults.Zs = Voc_phase / Isc_val;
         calcResults.Xs = Math.sqrt(Math.pow(calcResults.Zs, 2) - Math.pow(data.ra, 2));
         calcResults.lookupIf = If_val;
@@ -678,8 +748,8 @@ async function startAnimation() {
         traceIdx++;
     });
 
-    // ── Step 7: E0 Calculation and E0→OCC Lookup ─────────────────────
-    await animateStep(7, "Calculating <b>Generated EMF E0</b> using phasor addition: E0 = √[(V·cosφ + I·Ra)² + (V·sinφ ± I·Xs)²]. Then we find the required field current If_E0 from the OCC at this E0.", async () => {
+    // ── Step 7: E0 Calculation ───────────────────────────────────────
+    await animateStep(7, "Calculating <b>Generated EMF E0</b> using phasor addition: E0 = √[(V·cosφ + I·Ra)² + (V·sinφ ± I·Xs)²]. This value is used directly to calculate the voltage regulation.", async () => {
         const V = data.ratedV / Math.sqrt(3); // phase
         const I = data.ratedI;
         const phi = Math.acos(data.pf);
@@ -703,10 +773,6 @@ async function startAnimation() {
         calcResults.Ra = Ra;
         calcResults.Xs = Xs;
 
-        // Find If_E0 from OCC at E0_line
-        const If_E0 = interpolateYtoX(data.occIf, data.occVoc, E0_line);
-        calcResults.If_E0 = If_E0;
-
         // Draw horizontal E0 line across the plot
         const maxIf = data.occIf[data.occIf.length - 1];
         await animateLine('emfGraph', 0, E0_line, maxIf, E0_line, {
@@ -725,26 +791,6 @@ async function startAnimation() {
             textfont: { color: '#a855f7', size: 12 },
             marker: { color: '#a855f7', size: 10, symbol: 'circle' },
             showlegend: false
-        });
-        traceIdx++;
-
-        // Draw vertical line from x-axis up to OCC at If_E0
-        await animateLine('emfGraph', If_E0, 0, If_E0, E0_line, {
-            name: `If_E0`,
-            line: { color: '#a855f7', dash: 'dot', width: 2 },
-            showlegend: false
-        }, traceIdx);
-        traceIdx++;
-
-        // Mark OCC point at E0 — S point
-        Plotly.addTraces('emfGraph', {
-            x: [If_E0], y: [E0_line],
-            mode: 'markers+text', name: `If_E0 = ${If_E0.toFixed(2)} A`,
-            text: [`  If_E0 = ${If_E0.toFixed(2)} A`],
-            textposition: 'middle right',
-            textfont: { color: '#a855f7', size: 11 },
-            marker: { color: '#a855f7', size: 12, symbol: 'star' },
-            showlegend: true
         });
         traceIdx++;
 
@@ -774,7 +820,9 @@ async function startAnimation() {
             <hr style="border-color:var(--border);margin:8px 0;">
             <strong>Generated EMF (E0, phase):</strong> ${E0.toFixed(2)} V/ph<br>
             <strong>Generated EMF (E0, line):</strong> ${E0_line.toFixed(2)} V<br>
-            <strong>Field Current at E0 (If_E0):</strong> <span style="color:#a855f7;">${If_E0.toFixed(3)} A</span><br>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;line-height:1.4;">
+                *Note: Zs is determined here at rated voltage (saturated value). If you calculated Zs at a lower field current (e.g. where the short circuit test ends), you will get the unsaturated value, which is typically higher.
+            </div>
         `;
 
         // Formula panel
@@ -815,6 +863,21 @@ function resetGraph() {
     document.getElementById('explanationText').innerHTML =
         "Welcome to the EMF Method simulation. Enter the experimental data on the left and click 'Start Animation' to begin.";
     updateStatusLED('ready');
+    
+    // Reset drawing state
+    firstClickPoint = null;
+    clearTempMarker();
+    
+    const btnDraw = document.getElementById('btnModeDraw');
+    const btnErase = document.getElementById('btnModeErase');
+    const btnZoom = document.getElementById('btnModeZoom');
+    if (btnDraw) btnDraw.className = 'btn btn-secondary';
+    if (btnErase) btnErase.className = 'btn btn-secondary';
+    if (btnZoom) btnZoom.className = 'btn btn-primary';
+    const statusText = document.getElementById('drawingStatusText');
+    if (statusText) statusText.innerHTML = 'Status: Zoom/Pan mode active.';
+    currentDrawingTool = 'zoom';
+
     initGraph();
 }
 
@@ -847,7 +910,6 @@ function generateReport() {
     csv += "=== EMF & Regulation Results ===\n";
     csv += `Generated EMF E0 (phase),${calcResults.E0 ? calcResults.E0.toFixed(4) : '-'} V/ph\n`;
     csv += `Generated EMF E0 (line),${calcResults.E0_line ? calcResults.E0_line.toFixed(4) : '-'} V\n`;
-    csv += `Field Current for E0 (If_E0),${calcResults.If_E0 ? calcResults.If_E0.toFixed(4) : '-'} A\n`;
     csv += `Voltage Regulation,${calcResults.reg ? calcResults.reg.toFixed(4) : '-'} %\n\n`;
 
     csv += "=== Per-Unit Values ===\n";
@@ -859,4 +921,126 @@ function generateReport() {
     csv += `VR (p.u.),${calcResults.reg ? (calcResults.reg / 100).toFixed(4) : '-'}\n`;
 
     downloadPDF('EMF_Lab_Report.pdf', csv);
+}
+
+// ─── Interactive Drawing Board Functions ───────────────────────────
+function setDrawingTool(tool) {
+    currentDrawingTool = tool;
+    
+    // Reset click drawing state
+    firstClickPoint = null;
+    clearTempMarker();
+    
+    const btnDraw = document.getElementById('btnModeDraw');
+    const btnErase = document.getElementById('btnModeErase');
+    const btnZoom = document.getElementById('btnModeZoom');
+    const statusText = document.getElementById('drawingStatusText');
+    
+    if (btnDraw) btnDraw.className = 'btn btn-secondary';
+    if (btnErase) btnErase.className = 'btn btn-secondary';
+    if (btnZoom) btnZoom.className = 'btn btn-secondary';
+    
+    if (tool === 'drawline') {
+        if (btnDraw) btnDraw.className = 'btn btn-primary';
+        if (statusText) statusText.innerHTML = 'Status: Draw Line active. Click/drag OR select consecutive points.';
+        Plotly.relayout('emfGraph', { dragmode: 'drawline' });
+    } else if (tool === 'eraseshape') {
+        if (btnErase) btnErase.className = 'btn btn-primary';
+        if (statusText) statusText.innerHTML = 'Status: Erase active. Click a custom line to erase it.';
+        Plotly.relayout('emfGraph', { dragmode: 'eraseshape' });
+    } else {
+        if (btnZoom) btnZoom.className = 'btn btn-primary';
+        if (statusText) statusText.innerHTML = 'Status: Zoom/Pan mode active.';
+        Plotly.relayout('emfGraph', { dragmode: 'zoom' });
+    }
+}
+
+function handleGraphClick(e, dragLayer) {
+    const rect = dragLayer.getBoundingClientRect();
+    const xPx = e.clientX - rect.left;
+    const yPx = e.clientY - rect.top;
+    
+    const gd = document.getElementById('emfGraph');
+    const xAxis = gd._fullLayout.xaxis;
+    const yAxis = gd._fullLayout.yaxis;
+    
+    if (!xAxis || !yAxis) return;
+    
+    const xVal = xAxis.p2d(xPx);
+    const yVal = yAxis.p2d(yPx);
+    
+    if (!firstClickPoint) {
+        // First click
+        firstClickPoint = { x: xVal, y: yVal };
+        showTempMarker(xVal, yVal);
+        const statusText = document.getElementById('drawingStatusText');
+        if (statusText) statusText.innerHTML = `Status: Selected start point (${xVal.toFixed(2)} A, ${yVal.toFixed(1)} V). Click second point.`;
+    } else {
+        // Second click
+        const secondPt = { x: xVal, y: yVal };
+        const newShape = {
+            type: 'line',
+            x0: firstClickPoint.x,
+            y0: firstClickPoint.y,
+            x1: secondPt.x,
+            y1: secondPt.y,
+            line: {
+                color: '#a855f7',
+                width: 3
+            }
+        };
+        const currentShapes = gd.layout.shapes || [];
+        Plotly.relayout(gd, {
+            shapes: [...currentShapes, newShape]
+        });
+        
+        clearTempMarker();
+        firstClickPoint = null;
+        const statusText = document.getElementById('drawingStatusText');
+        if (statusText) statusText.innerHTML = `Status: Line drawn! Click a point to start another line.`;
+    }
+}
+
+function showTempMarker(x, y) {
+    clearTempMarker();
+    
+    const traceTempMarker = {
+        x: [x],
+        y: [y],
+        mode: 'markers+text',
+        text: ['  Start Point'],
+        textposition: 'top right',
+        textfont: { color: '#a855f7', size: 11, family: 'Inter, sans-serif' },
+        marker: { color: '#ffffff', size: 10, line: { color: '#a855f7', width: 2 } },
+        name: 'TEMP_MARKER',
+        showlegend: false
+    };
+    
+    Plotly.addTraces('emfGraph', traceTempMarker);
+}
+
+function clearTempMarker() {
+    const gd = document.getElementById('emfGraph');
+    if (!gd || !gd.data) return;
+    const idx = gd.data.findIndex(t => t.name === 'TEMP_MARKER');
+    if (idx !== -1) {
+        Plotly.deleteTraces('emfGraph', [idx]);
+    }
+}
+
+function clearAllDrawings() {
+    Plotly.relayout('emfGraph', { shapes: [] });
+    firstClickPoint = null;
+    clearTempMarker();
+    const statusText = document.getElementById('drawingStatusText');
+    if (statusText) {
+        if (currentDrawingTool === 'drawline') {
+            statusText.innerHTML = 'Status: Draw Line active. Click/drag OR select consecutive points.';
+        } else if (currentDrawingTool === 'eraseshape') {
+            statusText.innerHTML = 'Status: Erase active. Click a custom line to erase it.';
+        } else {
+            statusText.innerHTML = 'Status: Zoom/Pan mode active.';
+        }
+    }
+    showToast('All custom drawings cleared!', 'success');
 }
